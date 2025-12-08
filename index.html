@@ -1,490 +1,1192 @@
-<!DOCTYPE html>
-<html lang="uk">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Хортинг - Система управління гуртком</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        /* Основные стили будут в style.css, здесь только критичные */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: #1a1a2e; color: white; }
-        .hidden { display: none !important; }
-        .screen { min-height: 100vh; }
-    </style>
-</head>
-<body>
-    <!-- ЭКРАН ВХОДА -->
-    <div id="login-screen" class="screen active">
-        <div class="login-container">
-            <div class="logo">
-                <div class="logo-icon"><i class="fas fa-shield-alt"></i></div>
-                <h1>ХОРТИНГ</h1>
-                <p class="year">2025</p>
-                <p class="subtitle">Військовий гурток</p>
-            </div>
-            
-            <div class="login-form">
-                <h2><i class="fas fa-lock"></i> Вхід до системи</h2>
-                <p class="login-instruction">Введіть пароль доступу</p>
-                
-                <div class="input-group">
-                    <input type="password" id="password" placeholder="Пароль" autocomplete="off" autofocus>
-                    <button onclick="login()" class="btn-login">
-                        <i class="fas fa-sign-in-alt"></i> Увійти
-                    </button>
-                </div>
-                
-                <div id="login-error" class="error-message hidden">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <span>Невірний пароль</span>
-                </div>
-                
-                <div class="login-info">
-                    <p><i class="fas fa-info-circle"></i> Для доступу використовуйте пароль вашої групи</p>
-                </div>
-            </div>
-            
-            <div class="login-footer">
-                <p><i class="fas fa-lock"></i> Захищена система</p>
-                <p>© 2025 Військовий гурток "Хортинг"</p>
-            </div>
-        </div>
-    </div>
+// ============= СИСТЕМА ПАРОЛЕЙ =============
 
-    <!-- ОСНОВНОЙ ИНТЕРФЕЙС -->
-    <div id="main-screen" class="screen">
-        <!-- Шапка -->
-        <header class="main-header">
-            <div class="header-left">
-                <div class="header-logo">
-                    <i class="fas fa-crosshairs"></i>
-                    <span>ХОРТИНГ</span>
-                </div>
-                <div class="user-info">
-                    <h2 id="current-group">Завантаження...</h2>
-                    <div class="user-role">
-                        <span id="current-role" class="role-badge">...</span>
-                        <span id="current-access" class="access-badge">...</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="header-right">
-                <button id="absence-btn" class="btn-icon" onclick="showAbsenceModal()">
-                    <i class="fas fa-calendar-times"></i>
-                    <span>Відсутність</span>
-                </button>
-                
-                <button id="message-btn" class="btn-icon" onclick="showMessageModal()">
-                    <i class="fas fa-envelope"></i>
-                    <span>Повідомлення</span>
-                </button>
-                
-                <button id="sync-btn" class="btn-icon" onclick="showSyncModal()">
-                    <i class="fas fa-sync-alt"></i>
-                    <span>Синхронізація</span>
-                </button>
-                
-                <button id="admin-btn" class="btn-admin hidden" onclick="showAdminPanel()">
-                    <i class="fas fa-cog"></i>
-                    <span>Адмін</span>
-                </button>
-                
-                <button onclick="logout()" class="btn-logout">
-                    <i class="fas fa-sign-out-alt"></i> Вийти
-                </button>
-            </div>
-        </header>
+const VALID_PASSWORDS = {
+    // Младшие группы (просмотр)
+    'mal1kab747': { type: 'junior', group: 'mal1', access: 'view', role: 'viewer', name: 'Молодша група 1' },
+    'mal2kab353': { type: 'junior', group: 'mal2', access: 'view', role: 'viewer', name: 'Молодша група 2' },
+    'mal3kab539': { type: 'junior', group: 'mal3', access: 'view', role: 'viewer', name: 'Молодша група 3 (Розвідка)' },
+    
+    // Младшие группы (редактирование)
+    'mal1kab747_kam': { type: 'junior', group: 'mal1', access: 'edit', role: 'commander', name: 'Молодша група 1' },
+    'mal1kab747_zam': { type: 'junior', group: 'mal1', access: 'edit', role: 'deputy', name: 'Молодша група 1' },
+    'mal2kab353_kam': { type: 'junior', group: 'mal2', access: 'edit', role: 'commander', name: 'Молодша група 2' },
+    'mal2kab353_zam': { type: 'junior', group: 'mal2', access: 'edit', role: 'deputy', name: 'Молодша група 2' },
+    'mal3kab539_kam': { type: 'junior', group: 'mal3', access: 'edit', role: 'commander', name: 'Молодша група 3' },
+    'mal3kab539_zam': { type: 'junior', group: 'mal3', access: 'edit', role: 'deputy', name: 'Молодша група 3' },
+    
+    // Старшие группы (просмотр)
+    'str1kab023': { type: 'senior', group: 'str1', access: 'view', role: 'viewer', name: 'Старша група 1' },
+    'str2kab138': { type: 'senior', group: 'str2', access: 'view', role: 'viewer', name: 'Старша група 2' },
+    'str3kab846': { type: 'senior', group: 'str3', access: 'view', role: 'viewer', name: 'Старша група 3 (Розвідка)' },
+    
+    // Старшие группы (редактирование)
+    'str1kab023_kam': { type: 'senior', group: 'str1', access: 'edit', role: 'commander', name: 'Старша група 1' },
+    'str1kab023_zam': { type: 'senior', group: 'str1', access: 'edit', role: 'deputy', name: 'Старша група 1' },
+    'str2kab138_kam': { type: 'senior', group: 'str2', access: 'edit', role: 'commander', name: 'Старша група 2' },
+    'str2kab138_zam': { type: 'senior', group: 'str2', access: 'edit', role: 'deputy', name: 'Старша група 2' },
+    'str3kab846_kam': { type: 'senior', group: 'str3', access: 'edit', role: 'commander', name: 'Старша група 3' },
+    'str3kab846_zam': { type: 'senior', group: 'str3', access: 'edit', role: 'deputy', name: 'Старша група 3' },
+    
+    // Администратор
+    'kyk4kab934': { type: 'admin', group: 'all', access: 'admin', role: 'admin', name: 'Адміністратор' },
+    
+    // Родители
+    'Rod5kab': { type: 'parent', group: 'all', access: 'view', role: 'parent', name: 'Батьки' }
+};
+
+function checkPassword(password) {
+    password = password.trim();
+    
+    // Проверка родительского доступа
+    if (password.startsWith('Rod5kab') && password.length >= 8) {
+        return {
+            valid: true,
+            type: 'parent',
+            group: 'all',
+            access: 'view',
+            role: 'parent',
+            displayName: 'Батьки'
+        };
+    }
+    
+    // Проверка точного совпадения
+    const userData = VALID_PASSWORDS[password];
+    if (userData) {
+        return {
+            valid: true,
+            type: userData.type,
+            group: userData.group,
+            access: userData.access,
+            role: userData.role,
+            displayName: userData.name
+        };
+    }
+    
+    return { valid: false };
+}
+
+// ============= СИСТЕМА ХРАНЕНИЯ =============
+
+function initializeDatabase() {
+    const defaultDB = {
+        version: '4.0',
+        lastUpdated: new Date().toISOString(),
+        settings: {
+            autoCleanup: true,
+            cleanupTime: '23:59'
+        },
         
-        <!-- Основное содержимое -->
-        <main class="main-content">
-            <!-- Левая колонка: Участники -->
-            <section class="card members-section">
-                <div class="card-header">
-                    <h3><i class="fas fa-users"></i> Учасники групи</h3>
-                    <div class="card-actions">
-                        <span class="badge" id="members-count">0</span>
-                        <button id="edit-members-btn" class="btn-edit hidden" onclick="toggleEditMembers()">
-                            <i class="fas fa-edit"></i> Редагувати
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="card-body">
-                    <!-- Режим просмотра -->
-                    <div id="members-view">
-                        <table class="members-table">
-                            <thead>
-                                <tr>
-                                    <th>Позивний</th>
-                                    <th>Ім'я</th>
-                                    <th>Роль</th>
-                                    <th>Звання</th>
-                                </tr>
-                            </thead>
-                            <tbody id="members-list">
-                                <!-- Заполняется скриптом -->
-                            </tbody>
-                        </table>
-                    </div>
-                    
-                    <!-- Режим редактирования -->
-                    <div id="members-edit" class="hidden">
-                        <div class="edit-container">
-                            <div id="members-edit-list"></div>
-                            <button onclick="addMemberRow()" class="btn-add">
-                                <i class="fas fa-plus"></i> Додати учасника
-                            </button>
-                        </div>
-                        <div class="edit-actions">
-                            <button onclick="saveMembers()" class="btn-save">
-                                <i class="fas fa-save"></i> Зберегти
-                            </button>
-                            <button onclick="toggleEditMembers()" class="btn-cancel">
-                                <i class="fas fa-times"></i> Скасувати
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="card-footer">
-                    <small>Оновлено: <span id="members-updated">-</span></small>
-                </div>
-            </section>
+        groups: {
+            mal1: { name: 'Молодша група 1', type: 'junior', members: [], lastUpdated: null },
+            mal2: { name: 'Молодша група 2', type: 'junior', members: [], lastUpdated: null },
+            mal3: { name: 'Молодша група 3 (Розвідка)', type: 'junior', members: [], lastUpdated: null },
+            str1: { name: 'Старша група 1', type: 'senior', members: [], lastUpdated: null },
+            str2: { name: 'Старша група 2', type: 'senior', members: [], lastUpdated: null },
+            str3: { name: 'Старша група 3 (Розвідка)', type: 'senior', members: [], lastUpdated: null }
+        },
+        
+        announcements: {
+            global: [],
+            group: {
+                mal1: [], mal2: [], mal3: [],
+                str1: [], str2: [], str3: []
+            }
+        },
+        
+        tasks: {
+            mal1: [], mal2: [], mal3: [],
+            str1: [], str2: [], str3: []
+        },
+        
+        absences: [],
+        messages: []
+    };
+    
+    return defaultDB;
+}
+
+function loadDatabase() {
+    const saved = localStorage.getItem('horting_database');
+    if (!saved) return initializeDatabase();
+    
+    try {
+        return JSON.parse(saved);
+    } catch (e) {
+        console.error('Помилка завантаження:', e);
+        return initializeDatabase();
+    }
+}
+
+function saveDatabase() {
+    try {
+        database.lastUpdated = new Date().toISOString();
+        localStorage.setItem('horting_database', JSON.stringify(database));
+    } catch (e) {
+        console.error('Помилка збереження:', e);
+    }
+}
+
+// ============= ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ =============
+
+let currentUser = null;
+let database = loadDatabase();
+let editMembersCache = [];
+
+// ============= СИНХРОНИЗАЦИЯ =============
+
+const GITHUB_API = 'https://api.github.com';
+let githubToken = 'gph_9GFSGScaTNXIw9jtwSteGiAjZwiaHm2riJaY'
+let gistId = localStorage.getItem('horting_gist_id') || '';
+let lastSync = localStorage.getItem('last_sync') || 'Немає';
+
+function updateSyncStatus() {
+    const statusElement = document.getElementById('sync-status-text');
+    const lastSyncElement = document.getElementById('last-sync');
+    
+    if (githubToken && gistId) {
+        statusElement.textContent = 'Синхронізовано з GitHub';
+        statusElement.style.color = '#27ae60';
+    } else if (githubToken) {
+        statusElement.textContent = 'GitHub підключено';
+        statusElement.style.color = '#3498db';
+    } else {
+        statusElement.textContent = 'Локальне зберігання';
+        statusElement.style.color = '#7f8c8d';
+    }
+    
+    lastSyncElement.textContent = lastSync;
+}
+
+async function saveToGitHub() {
+    const token = document.getElementById('github-token').value.trim() || githubToken;
+    const gistName = document.getElementById('gist-name').value.trim() || 'horting-data';
+    
+    if (!token) {
+        alert('Будь ласка, введіть GitHub токен');
+        return;
+    }
+    
+    const data = {
+        files: {
+            [gistName + '.json']: {
+                content: JSON.stringify(database, null, 2)
+            }
+        },
+        description: 'Хортинг - дані гуртка',
+        public: false
+    };
+    
+    try {
+        const url = gistId ? `${GITHUB_API}/gists/${gistId}` : `${GITHUB_API}/gists`;
+        const method = gistId ? 'PATCH' : 'POST';
+        
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Authorization': `token ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) throw new Error('Помилка запиту');
+        
+        const result = await response.json();
+        gistId = result.id;
+        githubToken = token;
+        
+        localStorage.setItem('github_token', token);
+        localStorage.setItem('horting_gist_id', gistId);
+        localStorage.setItem('last_sync', new Date().toLocaleString('uk-UA'));
+        
+        updateSyncStatus();
+        showNotification('Дані збережено на GitHub!');
+    } catch (error) {
+        alert('Помилка збереження на GitHub: ' + error.message);
+    }
+}
+
+async function loadFromGitHub() {
+    const token = document.getElementById('github-token').value.trim() || githubToken;
+    
+    if (!token) {
+        alert('Введіть GitHub токен');
+        return;
+    }
+    
+    if (!gistId) {
+        alert('Спочатку збережіть дані на GitHub');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${GITHUB_API}/gists/${gistId}`, {
+            headers: {
+                'Authorization': `token ${token}`
+            }
+        });
+        
+        if (!response.ok) throw new Error('Помилка завантаження');
+        
+        const result = await response.json();
+        const fileName = Object.keys(result.files)[0];
+        const content = result.files[fileName].content;
+        
+        const importedData = JSON.parse(content);
+        
+        if (confirm('Це перезапише поточні дані. Продовжити?')) {
+            database = importedData;
+            saveDatabase();
+            localStorage.setItem('last_sync', new Date().toLocaleString('uk-UA'));
             
-            <!-- Правая колонка -->
-            <div class="right-column">
-                <!-- Общие объявления -->
-                <section class="card announcements-section">
-                    <div class="card-header">
-                        <h3><i class="fas fa-bullhorn"></i> Загальні оголошення</h3>
-                        <button id="add-announcement-btn" class="btn-edit hidden" onclick="showAddAnnouncementModal()">
-                            <i class="fas fa-plus"></i> Додати
-                        </button>
-                    </div>
-                    
-                    <div class="card-body">
-                        <div id="announcements-list">
-                            <!-- Объявления загружаются скриптом -->
-                        </div>
-                    </div>
-                    
-                    <div class="card-footer">
-                        <small>Оновлено: <span id="announcements-updated">-</span></small>
-                    </div>
-                </section>
-                
-                <!-- Задачи команды -->
-                <section class="card tasks-section">
-                    <div class="card-header">
-                        <h3><i class="fas fa-tasks"></i> Завдання групи</h3>
-                        <button id="add-task-btn" class="btn-edit hidden" onclick="showAddTaskModal()">
-                            <i class="fas fa-plus"></i> Додати
-                        </button>
-                    </div>
-                    
-                    <div class="card-body">
-                        <div id="tasks-list">
-                            <!-- Задачи загружаются скриптом -->
-                        </div>
-                    </div>
-                    
-                    <div class="card-footer">
-                        <small>Оновлено: <span id="tasks-updated">-</span></small>
-                    </div>
-                </section>
-                
-                <!-- Отсутствующие -->
-                <section class="card absence-section">
-                    <div class="card-header">
-                        <h3><i class="fas fa-user-times"></i> Відсутні на заняттях</h3>
-                    </div>
-                    
-                    <div class="card-body">
-                        <div id="absence-list">
-                            <!-- Список отсутствующих -->
-                        </div>
-                    </div>
-                </section>
-            </div>
-        </main>
-    </div>
+            updateSyncStatus();
+            showNotification('Дані завантажено з GitHub!');
+            
+            if (currentUser) {
+                loadData();
+            }
+        }
+    } catch (error) {
+        alert('Помилка завантаження: ' + error.message);
+    }
+}
 
-    <!-- МОДАЛЬНЫЕ ОКНА -->
+function exportLocalData() {
+    const dataStr = JSON.stringify(database, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
     
-    <!-- Отсутствие -->
-    <div id="absence-modal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-calendar-times"></i> Повідомлення про відсутність</h3>
-                <button class="modal-close" onclick="hideAbsenceModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Позивний:</label>
-                    <input type="text" id="absence-callsign" placeholder="Ваш позивний">
-                </div>
-                <div class="form-group">
-                    <label>Ім'я:</label>
-                    <input type="text" id="absence-name" placeholder="Ваше ім'я">
-                </div>
-                <div class="form-group">
-                    <label>День:</label>
-                    <select id="absence-day">
-                        <option value="Понеділок">Понеділок</option>
-                        <option value="Середа">Середа</option>
-                        <option value="Субота">Субота</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Дата:</label>
-                    <input type="date" id="absence-date">
-                </div>
-                <div class="form-group">
-                    <label>Причина (необов'язково):</label>
-                    <textarea id="absence-reason" placeholder="Коротка причина..." rows="3"></textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button onclick="submitAbsence()" class="btn-primary">
-                    <i class="fas fa-paper-plane"></i> Надіслати
-                </button>
-                <button onclick="hideAbsenceModal()" class="btn-secondary">
-                    Скасувати
-                </button>
-            </div>
-        </div>
-    </div>
+    const link = document.createElement('a');
+    link.href = dataUri;
+    link.download = `horting_backup_${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
     
-    <!-- Сообщения -->
-    <div id="message-modal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-envelope"></i> Надіслати повідомлення</h3>
-                <button class="modal-close" onclick="hideMessageModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Кому:</label>
-                    <select id="message-to">
-                        <option value="admin">Адміністратору</option>
-                        <option value="commander">Командиру групи</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Тема:</label>
-                    <input type="text" id="message-subject" placeholder="Тема повідомлення">
-                </div>
-                <div class="form-group">
-                    <label>Повідомлення:</label>
-                    <textarea id="message-text" placeholder="Текст повідомлення..." rows="5"></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Ваш позивний:</label>
-                    <input type="text" id="message-from" placeholder="Ваш позивний">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button onclick="sendMessage()" class="btn-primary">
-                    <i class="fas fa-paper-plane"></i> Надіслати
-                </button>
-                <button onclick="hideMessageModal()" class="btn-secondary">
-                    Скасувати
-                </button>
-            </div>
-        </div>
-    </div>
+    showNotification('Дані експортовано!');
+}
+
+function importLocalData() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
     
-    <!-- Объявление -->
-    <div id="announcement-modal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-bullhorn"></i> Нове оголошення</h3>
-                <button class="modal-close" onclick="hideAnnouncementModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Текст оголошення:</label>
-                    <textarea id="announcement-text" placeholder="Текст оголошення..." rows="4"></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Важливість:</label>
-                    <select id="announcement-priority">
-                        <option value="low">Низька</option>
-                        <option value="normal" selected>Звичайна</option>
-                        <option value="high">Висока</option>
-                        <option value="urgent">Термінова</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Видалити автоматично:</label>
-                    <input type="date" id="announcement-expiry">
-                    <small class="hint">В 23:59 обраної дати оголошення буде видалено</small>
-                </div>
-                <div class="form-group">
-                    <label>Тип:</label>
-                    <select id="announcement-type">
-                        <option value="global">Загальне (для всіх)</option>
-                        <option value="group">Тільки для вашої групи</option>
-                    </select>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button onclick="addAnnouncement()" class="btn-primary">
-                    <i class="fas fa-plus"></i> Додати
-                </button>
-                <button onclick="hideAnnouncementModal()" class="btn-secondary">
-                    Скасувати
-                </button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Задача -->
-    <div id="task-modal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-tasks"></i> Нове завдання</h3>
-                <button class="modal-close" onclick="hideTaskModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Завдання:</label>
-                    <textarea id="task-text" placeholder="Опишіть завдання..." rows="4"></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Важливість:</label>
-                    <select id="task-priority">
-                        <option value="low">Низька</option>
-                        <option value="normal" selected>Звичайна</option>
-                        <option value="high">Висока</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Термін виконання:</label>
-                    <input type="date" id="task-deadline">
-                </div>
-                <div class="form-group">
-                    <label>Автоматичне видалення:</label>
-                    <input type="date" id="task-expiry">
-                    <small class="hint">В 23:59 обраної дати завдання буде видалено</small>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button onclick="addTask()" class="btn-primary">
-                    <i class="fas fa-plus"></i> Додати
-                </button>
-                <button onclick="hideTaskModal()" class="btn-secondary">
-                    Скасувати
-                </button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Синхронизация -->
-    <div id="sync-modal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-sync-alt"></i> Синхронізація даних</h3>
-                <button class="modal-close" onclick="hideSyncModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="sync-options">
-                    <div class="sync-option">
-                        <h4><i class="fas fa-cloud"></i> GitHub Gist</h4>
-                        <div class="form-group">
-                            <label>GitHub Токен:</label>
-                            <input type="password" id="github-token" placeholder="ghp_xxxxxxxxxxxx">
-                            <small>Створіть токен на GitHub з правами gist</small>
-                        </div>
-                        <div class="form-group">
-                            <label>Назва Gist:</label>
-                            <input type="text" id="gist-name" value="horting-data">
-                        </div>
-                        <div class="sync-buttons">
-                            <button onclick="saveToGitHub()" class="btn-primary">
-                                <i class="fas fa-upload"></i> Завантажити на GitHub
-                            </button>
-                            <button onclick="loadFromGitHub()" class="btn-secondary">
-                                <i class="fas fa-download"></i> Завантажити з GitHub
-                            </button>
-                        </div>
-                    </div>
+    input.onchange = function(e) {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        
+        reader.onload = function(event) {
+            try {
+                const importedData = JSON.parse(event.target.result);
+                
+                if (confirm('Це перезапише всі дані. Продовжити?')) {
+                    database = importedData;
+                    saveDatabase();
+                    showNotification('Дані імпортовано!');
                     
-                    <div class="sync-option">
-                        <h4><i class="fas fa-file-export"></i> Резервне копіювання</h4>
-                        <div class="backup-buttons">
-                            <button onclick="exportLocalData()" class="btn-primary">
-                                <i class="fas fa-download"></i> Експортувати дані
-                            </button>
-                            <button onclick="importLocalData()" class="btn-secondary">
-                                <i class="fas fa-upload"></i> Імпортувати дані
-                            </button>
-                        </div>
+                    if (currentUser) {
+                        loadData();
+                    }
+                }
+            } catch (error) {
+                alert('Помилка при читанні файлу');
+            }
+        };
+        
+        reader.readAsText(file);
+    };
+    
+    input.click();
+}
+
+function showSyncModal() {
+    document.getElementById('github-token').value = githubToken;
+    document.getElementById('gist-name').value = 'horting-data';
+    updateSyncStatus();
+    document.getElementById('sync-modal').classList.remove('hidden');
+}
+
+function hideSyncModal() {
+    document.getElementById('sync-modal').classList.add('hidden');
+}
+
+// ============= ОСНОВНЫЕ ФУНКЦИИ =============
+
+function login() {
+    const passwordInput = document.getElementById('password');
+    const password = passwordInput.value;
+    const errorElement = document.getElementById('login-error');
+    
+    const userInfo = checkPassword(password);
+    
+    if (!userInfo.valid) {
+        errorElement.classList.remove('hidden');
+        passwordInput.value = '';
+        passwordInput.focus();
+        if (navigator.vibrate) navigator.vibrate(200);
+        return;
+    }
+    
+    currentUser = userInfo;
+    passwordInput.value = '';
+    errorElement.classList.add('hidden');
+    
+    document.getElementById('login-screen').classList.remove('active');
+    document.getElementById('main-screen').classList.add('active');
+    
+    setupInterface();
+    loadData();
+    showNotification(`Вітаємо, ${userInfo.displayName}!`);
+}
+
+function logout() {
+    if (confirm('Вийти з системи?')) {
+        currentUser = null;
+        document.getElementById('main-screen').classList.remove('active');
+        document.getElementById('login-screen').classList.add('active');
+        document.getElementById('password').focus();
+    }
+}
+
+function setupInterface() {
+    if (!currentUser) return;
+    
+    document.getElementById('current-group').textContent = currentUser.displayName;
+    
+    const roleElement = document.getElementById('current-role');
+    switch(currentUser.role) {
+        case 'commander': roleElement.textContent = 'Командир'; break;
+        case 'deputy': roleElement.textContent = 'Заступник'; break;
+        case 'admin': roleElement.textContent = 'Адміністратор'; break;
+        case 'parent': roleElement.textContent = 'Батьки'; break;
+        default: roleElement.textContent = 'Переглядач';
+    }
+    
+    const accessElement = document.getElementById('current-access');
+    switch(currentUser.access) {
+        case 'edit': accessElement.textContent = 'Редагування'; break;
+        case 'admin': accessElement.textContent = 'Повний доступ'; break;
+        default: accessElement.textContent = 'Перегляд';
+    }
+    
+    const canEdit = currentUser.access === 'edit' || currentUser.access === 'admin';
+    const isAdmin = currentUser.access === 'admin';
+    const isParent = currentUser.type === 'parent';
+    
+    document.getElementById('admin-btn').classList.toggle('hidden', !isAdmin);
+    document.getElementById('edit-members-btn').classList.toggle('hidden', !canEdit);
+    document.getElementById('add-announcement-btn').classList.toggle('hidden', !canEdit);
+    document.getElementById('add-task-btn').classList.toggle('hidden', !canEdit);
+    
+    if (isParent) {
+        document.querySelector('.members-section').classList.add('hidden');
+        document.querySelector('.tasks-section').classList.add('hidden');
+        document.querySelector('.absence-section').classList.add('hidden');
+        document.getElementById('absence-btn').classList.add('hidden');
+        document.getElementById('message-btn').classList.add('hidden');
+        document.getElementById('add-announcement-btn').classList.add('hidden');
+    }
+}
+
+function loadData() {
+    if (!currentUser) return;
+    
+    if (currentUser.type === 'parent') {
+        loadAnnouncements();
+        return;
+    }
+    
+    if (currentUser.access === 'admin') {
+        loadAllData();
+    } else {
+        loadGroupData(currentUser.group);
+    }
+}
+
+function loadGroupData(groupId) {
+    const group = database.groups[groupId];
+    if (group) {
+        loadMembers(group.members);
+        document.getElementById('members-count').textContent = group.members.length;
+        document.getElementById('members-updated').textContent = 
+            group.lastUpdated ? formatDate(group.lastUpdated) : 'Немає даних';
+    }
+    
+    loadAnnouncements();
+    loadTasks();
+    loadAbsences();
+}
+
+function loadAllData() {
+    const firstGroup = Object.keys(database.groups)[0];
+    loadGroupData(firstGroup);
+}
+
+function loadMembers(members) {
+    const container = document.getElementById('members-list');
+    container.innerHTML = '';
+    
+    if (members.length === 0) {
+        container.innerHTML = '<tr><td colspan="4" class="empty-message">Немає учасників</td></tr>';
+        return;
+    }
+    
+    members.forEach((member, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><strong>${member.callsign}</strong></td>
+            <td>${member.name}</td>
+            <td>${member.role}</td>
+            <td>${member.rank}</td>
+        `;
+        container.appendChild(row);
+    });
+}
+
+function loadAnnouncements() {
+    const container = document.getElementById('announcements-list');
+    container.innerHTML = '';
+    
+    let announcements = [];
+    
+    if (currentUser.type === 'parent') {
+        announcements = database.announcements.global || [];
+    } else if (currentUser.group && currentUser.group !== 'all') {
+        const global = database.announcements.global || [];
+        const groupAnn = database.announcements.group[currentUser.group] || [];
+        announcements = [...global, ...groupAnn];
+    } else {
+        announcements = database.announcements.global || [];
+    }
+    
+    announcements.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    
+    if (announcements.length === 0) {
+        container.innerHTML = '<div class="empty-message">Немає оголошень</div>';
+        document.getElementById('announcements-updated').textContent = 'Немає даних';
+        return;
+    }
+    
+    announcements.forEach((announcement) => {
+        const item = document.createElement('div');
+        item.className = `announcement-item priority-${announcement.priority}`;
+        
+        const isExpired = announcement.expiryDate && new Date(announcement.expiryDate + 'T23:59') < new Date();
+        if (isExpired) {
+            item.style.opacity = '0.6';
+        }
+        
+        item.innerHTML = `
+            <div class="announcement-content">
+                <div class="announcement-text">
+                    <div>${announcement.text}</div>
+                    <div class="announcement-meta">
+                        <span><i class="fas fa-calendar"></i> ${formatDate(announcement.createdAt)}</span>
+                        ${announcement.expiryDate ? 
+                            `<span><i class="fas fa-clock"></i> До: ${announcement.expiryDate}</span>` : ''}
+                        ${announcement.type === 'group' ? 
+                            `<span><i class="fas fa-users"></i> Тільки для групи</span>` : 
+                            `<span><i class="fas fa-globe"></i> Загальне</span>`}
                     </div>
                 </div>
-                
-                <div class="sync-status" id="sync-status">
-                    <p><i class="fas fa-info-circle"></i> Статус: <span id="sync-status-text">Локальне зберігання</span></p>
-                    <p>Остання синхронізація: <span id="last-sync">Немає</span></p>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button onclick="hideSyncModal()" class="btn-secondary">Закрити</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Админ-панель -->
-    <div id="admin-panel" class="modal hidden">
-        <div class="modal-content wide-modal">
-            <div class="modal-header">
-                <h3><i class="fas fa-cog"></i> Адміністративна панель</h3>
-                <button class="modal-close" onclick="hideAdminPanel()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="admin-tabs">
-                    <button class="tab-btn active" onclick="showAdminTab('groups')">Усі групи</button>
-                    <button class="tab-btn" onclick="showAdminTab('messages')">Повідомлення</button>
-                    <button class="tab-btn" onclick="showAdminTab('settings')">Налаштування</button>
-                </div>
-                
-                <div id="admin-groups" class="admin-tab active">
-                    <h4>Управління групами</h4>
-                    <div id="all-groups-container" class="groups-container"></div>
-                </div>
-                
-                <div id="admin-messages" class="admin-tab hidden">
-                    <h4>Повідомлення від учасників</h4>
-                    <div id="messages-container" class="messages-container"></div>
-                </div>
-                
-                <div id="admin-settings" class="admin-tab hidden">
-                    <h4>Налаштування системи</h4>
-                    <div class="settings-form">
-                        <div class="form-group">
-                            <label>Автоматичне очищення:</label>
-                            <select id="auto-cleanup">
-                                <option value="enabled" selected>Увімкнено</option>
-                                <option value="disabled">Вимкнено</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Час очищення:</label>
-                            <input type="time" id="cleanup-time" value="23:59">
-                        </div>
-                        <button onclick="saveSettings()" class="btn-primary">
-                            <i class="fas fa-save"></i> Зберегти налаштування
+                ${(currentUser.access === 'edit' || currentUser.access === 'admin') && !isExpired ? `
+                    <div class="announcement-actions">
+                        <button class="btn-delete" onclick="deleteAnnouncement('${announcement.id}')">
+                            <i class="fas fa-trash"></i>
                         </button>
                     </div>
+                ` : ''}
+            </div>
+        `;
+        container.appendChild(item);
+    });
+    
+    if (announcements.length > 0) {
+        document.getElementById('announcements-updated').textContent = formatDate(announcements[0].createdAt);
+    }
+}
+
+function loadTasks() {
+    const container = document.getElementById('tasks-list');
+    container.innerHTML = '';
+    
+    const tasks = database.tasks[currentUser.group] || [];
+    
+    tasks.sort((a, b) => {
+        const priorityOrder = { high: 0, normal: 1, low: 2 };
+        return priorityOrder[a.priority] - priorityOrder[b.priority];
+    });
+    
+    if (tasks.length === 0) {
+        container.innerHTML = '<div class="empty-message">Немає завдань</div>';
+        document.getElementById('tasks-updated').textContent = 'Немає даних';
+        return;
+    }
+    
+    tasks.forEach((task, index) => {
+        const item = document.createElement('div');
+        item.className = `task-item priority-${task.priority}`;
+        
+        const isOverdue = task.deadline && new Date(task.deadline) < new Date();
+        if (isOverdue) {
+            item.style.borderLeftColor = '#e74c3c';
+        }
+        
+        item.innerHTML = `
+            <div class="task-content">
+                <div class="task-text">
+                    <div>${task.text}</div>
+                    <div class="task-meta">
+                        <span><i class="fas fa-calendar"></i> ${formatDate(task.createdAt)}</span>
+                        ${task.deadline ? 
+                            `<span><i class="fas fa-hourglass-end"></i> Термін: ${task.deadline}</span>` : ''}
+                        ${task.expiryDate ? 
+                            `<span><i class="fas fa-clock"></i> Видалення: ${task.expiryDate}</span>` : ''}
+                    </div>
+                </div>
+                ${(currentUser.access === 'edit' || currentUser.access === 'admin') ? `
+                    <div class="task-actions">
+                        <button class="btn-delete" onclick="deleteTask(${index})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+        container.appendChild(item);
+    });
+    
+    if (tasks.length > 0) {
+        document.getElementById('tasks-updated').textContent = formatDate(tasks[0].createdAt);
+    }
+}
+
+function loadAbsences() {
+    const container = document.getElementById('absence-list');
+    container.innerHTML = '';
+    
+    const today = new Date().toISOString().split('T')[0];
+    const relevantAbsences = database.absences.filter(absence => 
+        absence.date >= today && 
+        (currentUser.access === 'admin' || absence.group === currentUser.group)
+    );
+    
+    if (relevantAbsences.length === 0) {
+        container.innerHTML = '<div class="empty-message">Всі присутні</div>';
+        return;
+    }
+    
+    relevantAbsences.forEach(absence => {
+        const item = document.createElement('div');
+        item.className = 'absence-item';
+        item.innerHTML = `
+            <div class="absence-info">
+                <div class="absence-details">
+                    <div><strong>${absence.callsign}</strong> (${absence.name})</div>
+                    <div class="absence-date">${absence.day}, ${absence.date}</div>
+                    ${absence.reason ? `<div class="absence-reason">${absence.reason}</div>` : ''}
+                </div>
+                ${(currentUser.access === 'edit' || currentUser.access === 'admin') ? `
+                    <button class="btn-delete" onclick="deleteAbsence('${absence.id}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                ` : ''}
+            </div>
+        `;
+        container.appendChild(item);
+    });
+}
+
+// ============= УПРАВЛЕНИЕ УЧАСТНИКАМИ =============
+
+function toggleEditMembers() {
+    const view = document.getElementById('members-view');
+    const edit = document.getElementById('members-edit');
+    
+    if (edit.classList.contains('hidden')) {
+        view.classList.add('hidden');
+        edit.classList.remove('hidden');
+        loadEditMembers();
+    } else {
+        view.classList.remove('hidden');
+        edit.classList.add('hidden');
+        editMembersCache = [];
+    }
+}
+
+function loadEditMembers() {
+    const container = document.getElementById('members-edit-list');
+    container.innerHTML = '';
+    editMembersCache = [];
+    
+    const group = database.groups[currentUser.group];
+    const members = group ? group.members : [];
+    
+    if (members.length === 0) {
+        addMemberRow();
+    } else {
+        members.forEach(member => {
+            addMemberRow(member);
+        });
+    }
+}
+
+function addMemberRow(member = null) {
+    const container = document.getElementById('members-edit-list');
+    const index = editMembersCache.length;
+    
+    const row = document.createElement('div');
+    row.className = 'member-edit-row';
+    
+    if (member) {
+        editMembersCache[index] = { ...member };
+    } else {
+        editMembersCache[index] = { callsign: '', name: '', role: '', rank: '' };
+    }
+    
+    row.innerHTML = `
+        <input type="text" placeholder="Позивний" value="${editMembersCache[index].callsign}" 
+               oninput="updateMemberField(${index}, 'callsign', this.value)">
+        <input type="text" placeholder="Ім'я" value="${editMembersCache[index].name}"
+               oninput="updateMemberField(${index}, 'name', this.value)">
+        <input type="text" placeholder="Роль" value="${editMembersCache[index].role}"
+               oninput="updateMemberField(${index}, 'role', this.value)">
+        <input type="text" placeholder="Звання" value="${editMembersCache[index].rank}"
+               oninput="updateMemberField(${index}, 'rank', this.value)">
+        <button class="btn-delete" onclick="removeMemberRow(${index})">
+            <i class="fas fa-trash"></i>
+        </button>
+    `;
+    container.appendChild(row);
+}
+
+function updateMemberField(index, field, value) {
+    if (editMembersCache[index]) {
+        editMembersCache[index][field] = value.trim();
+    }
+}
+
+function removeMemberRow(index) {
+    if (editMembersCache.length > 1) {
+        editMembersCache.splice(index, 1);
+        reloadEditMembers();
+    }
+}
+
+function reloadEditMembers() {
+    const container = document.getElementById('members-edit-list');
+    container.innerHTML = '';
+    
+    editMembersCache.forEach((member, index) => {
+        const row = document.createElement('div');
+        row.className = 'member-edit-row';
+        row.innerHTML = `
+            <input type="text" placeholder="Позивний" value="${member.callsign}" 
+                   oninput="updateMemberField(${index}, 'callsign', this.value)">
+            <input type="text" placeholder="Ім'я" value="${member.name}"
+                   oninput="updateMemberField(${index}, 'name', this.value)">
+            <input type="text" placeholder="Роль" value="${member.role}"
+                   oninput="updateMemberField(${index}, 'role', this.value)">
+            <input type="text" placeholder="Звання" value="${member.rank}"
+                   oninput="updateMemberField(${index}, 'rank', this.value)">
+            <button class="btn-delete" onclick="removeMemberRow(${index})">
+                <i class="fas fa-trash"></i>
+            </button>
+        `;
+        container.appendChild(row);
+    });
+}
+
+function saveMembers() {
+    const members = editMembersCache.filter(member => 
+        member.callsign && member.name && member.role && member.rank
+    );
+    
+    database.groups[currentUser.group].members = members;
+    database.groups[currentUser.group].lastUpdated = new Date().toISOString();
+    saveDatabase();
+    
+    loadMembers(members);
+    toggleEditMembers();
+    
+    document.getElementById('members-count').textContent = members.length;
+    document.getElementById('members-updated').textContent = formatDate(new Date());
+    
+    showNotification('Склад групи збережено!');
+}
+
+// ============= ОБЪЯВЛЕНИЯ =============
+
+function showAddAnnouncementModal() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('announcement-expiry').min = today;
+    document.getElementById('announcement-modal').classList.remove('hidden');
+}
+
+function hideAnnouncementModal() {
+    document.getElementById('announcement-modal').classList.add('hidden');
+    document.getElementById('announcement-text').value = '';
+}
+
+function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
+
+function addAnnouncement() {
+    const text = document.getElementById('announcement-text').value.trim();
+    if (!text) {
+        alert('Введіть текст оголошення');
+        return;
+    }
+    
+    const announcement = {
+        id: generateId(),
+        text: text,
+        priority: document.getElementById('announcement-priority').value,
+        type: document.getElementById('announcement-type').value,
+        expiryDate: document.getElementById('announcement-expiry').value || null,
+        createdAt: new Date().toISOString(),
+        createdBy: currentUser.group
+    };
+    
+    if (announcement.type === 'global') {
+        database.announcements.global.push(announcement);
+    } else {
+        database.announcements.group[currentUser.group].push(announcement);
+    }
+    
+    saveDatabase();
+    hideAnnouncementModal();
+    loadAnnouncements();
+    showNotification('Оголошення додано!');
+}
+
+function deleteAnnouncement(announcementId) {
+    if (!confirm('Видалити це оголошення?')) return;
+    
+    let found = false;
+    
+    const globalIndex = database.announcements.global.findIndex(a => a.id === announcementId);
+    if (globalIndex !== -1) {
+        database.announcements.global.splice(globalIndex, 1);
+        found = true;
+    }
+    
+    if (!found) {
+        for (const group in database.announcements.group) {
+            const index = database.announcements.group[group].findIndex(a => a.id === announcementId);
+            if (index !== -1) {
+                database.announcements.group[group].splice(index, 1);
+                found = true;
+                break;
+            }
+        }
+    }
+    
+    if (found) {
+        saveDatabase();
+        loadAnnouncements();
+        showNotification('Оголошення видалено');
+    }
+}
+
+// ============= ЗАДАЧИ =============
+
+function showAddTaskModal() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('task-deadline').min = today;
+    document.getElementById('task-expiry').min = today;
+    document.getElementById('task-modal').classList.remove('hidden');
+}
+
+function hideTaskModal() {
+    document.getElementById('task-modal').classList.add('hidden');
+    document.getElementById('task-text').value = '';
+}
+
+function addTask() {
+    const text = document.getElementById('task-text').value.trim();
+    if (!text) {
+        alert('Введіть текст завдання');
+        return;
+    }
+    
+    const task = {
+        text: text,
+        priority: document.getElementById('task-priority').value,
+        deadline: document.getElementById('task-deadline').value || null,
+        expiryDate: document.getElementById('task-expiry').value || null,
+        createdAt: new Date().toISOString()
+    };
+    
+    database.tasks[currentUser.group].push(task);
+    saveDatabase();
+    hideTaskModal();
+    loadTasks();
+    showNotification('Завдання додано!');
+}
+
+function deleteTask(index) {
+    if (!confirm('Видалити це завдання?')) return;
+    
+    database.tasks[currentUser.group].splice(index, 1);
+    saveDatabase();
+    loadTasks();
+    showNotification('Завдання видалено');
+}
+
+// ============= ОТСУТСТВИЕ =============
+
+function showAbsenceModal() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('absence-date').min = today;
+    document.getElementById('absence-modal').classList.remove('hidden');
+}
+
+function hideAbsenceModal() {
+    document.getElementById('absence-modal').classList.add('hidden');
+    document.getElementById('absence-callsign').value = '';
+    document.getElementById('absence-name').value = '';
+    document.getElementById('absence-reason').value = '';
+}
+
+function submitAbsence() {
+    const callsign = document.getElementById('absence-callsign').value.trim();
+    const name = document.getElementById('absence-name').value.trim();
+    const date = document.getElementById('absence-date').value;
+    
+    if (!callsign || !name || !date) {
+        alert('Заповніть обов\'язкові поля');
+        return;
+    }
+    
+    const absence = {
+        id: generateId(),
+        callsign: callsign,
+        name: name,
+        day: document.getElementById('absence-day').value,
+        date: date,
+        reason: document.getElementById('absence-reason').value.trim(),
+        group: currentUser.group,
+        createdAt: new Date().toISOString()
+    };
+    
+    database.absences.push(absence);
+    saveDatabase();
+    hideAbsenceModal();
+    loadAbsences();
+    showNotification('Повідомлення надіслано!');
+}
+
+function deleteAbsence(absenceId) {
+    if (!confirm('Видалити це повідомлення?')) return;
+    
+    const index = database.absences.findIndex(a => a.id === absenceId);
+    if (index !== -1) {
+        database.absences.splice(index, 1);
+        saveDatabase();
+        loadAbsences();
+        showNotification('Повідомлення видалено');
+    }
+}
+
+// ============= СООБЩЕНИЯ =============
+
+function showMessageModal() {
+    document.getElementById('message-modal').classList.remove('hidden');
+}
+
+function hideMessageModal() {
+    document.getElementById('message-modal').classList.add('hidden');
+    document.getElementById('message-subject').value = '';
+    document.getElementById('message-text').value = '';
+    document.getElementById('message-from').value = '';
+}
+
+function sendMessage() {
+    const subject = document.getElementById('message-subject').value.trim();
+    const text = document.getElementById('message-text').value.trim();
+    const from = document.getElementById('message-from').value.trim();
+    
+    if (!subject || !text || !from) {
+        alert('Заповніть всі поля');
+        return;
+    }
+    
+    const message = {
+        id: generateId(),
+        to: document.getElementById('message-to').value,
+        subject: subject,
+        text: text,
+        from: from,
+        group: currentUser.group,
+        createdAt: new Date().toISOString(),
+        read: false
+    };
+    
+    database.messages.push(message);
+    saveDatabase();
+    hideMessageModal();
+    showNotification('Повідомлення надіслано!');
+}
+
+// ============= АДМИН-ПАНЕЛЬ =============
+
+function showAdminPanel() {
+    if (currentUser.access !== 'admin') return;
+    
+    document.getElementById('admin-panel').classList.remove('hidden');
+    loadAdminData();
+}
+
+function hideAdminPanel() {
+    document.getElementById('admin-panel').classList.add('hidden');
+}
+
+function showAdminTab(tabName) {
+    document.querySelectorAll('.admin-tab').forEach(tab => {
+        tab.classList.add('hidden');
+    });
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    document.getElementById(`admin-${tabName}`).classList.remove('hidden');
+    event.target.classList.add('active');
+}
+
+function loadAdminData() {
+    loadAllGroups();
+    loadMessages();
+    loadSettings();
+}
+
+function loadAllGroups() {
+    const container = document.getElementById('all-groups-container');
+    container.innerHTML = '';
+    
+    for (const [groupId, group] of Object.entries(database.groups)) {
+        const card = document.createElement('div');
+        card.className = 'group-card';
+        card.innerHTML = `
+            <h5><i class="fas fa-${group.type === 'junior' ? 'user-graduate' : 'user-tie'}"></i> ${group.name}</h5>
+            <div class="group-members">
+                ${group.members.map(member => `
+                    <div class="group-member">
+                        <span><strong>${member.callsign}</strong> - ${member.name}</span>
+                        <span>${member.role}</span>
+                    </div>
+                `).join('')}
+                ${group.members.length === 0 ? 
+                    '<div class="empty-message">Немає учасників</div>' : ''}
+            </div>
+            <div class="group-stats">
+                <div class="stat">
+                    <div class="stat-value">${group.members.length}</div>
+                    <div class="stat-label">Учасників</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">${database.announcements.group[groupId]?.length || 0}</div>
+                    <div class="stat-label">Оголошень</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">${database.tasks[groupId]?.length || 0}</div>
+                    <div class="stat-label">Завдань</div>
                 </div>
             </div>
-        </div>
-    </div>
+            <button onclick="manageGroup('${groupId}')" class="btn-primary" style="margin-top: 15px; width: 100%;">
+                <i class="fas fa-edit"></i> Керувати групою
+            </button>
+        `;
+        container.appendChild(card);
+    }
+}
 
-    <!-- Подключаем стили и скрипты -->
-    <link rel="stylesheet" href="style.css">
-    <script src="script.js"></script>
-</body>
-</html>
+function manageGroup(groupId) {
+    currentUser.group = groupId;
+    hideAdminPanel();
+    loadGroupData(groupId);
+    showNotification(`Переключено на групу: ${database.groups[groupId].name}`);
+}
+
+function loadMessages() {
+    const container = document.getElementById('messages-container');
+    container.innerHTML = '';
+    
+    const messages = database.messages || [];
+    
+    if (messages.length === 0) {
+        container.innerHTML = '<div class="empty-message">Немає повідомлень</div>';
+        return;
+    }
+    
+    messages.forEach(message => {
+        const item = document.createElement('div');
+        item.className = 'message-item';
+        if (!message.read) {
+            item.style.background = 'rgba(52, 152, 219, 0.1)';
+        }
+        
+        item.innerHTML = `
+            <div class="message-header">
+                <div class="message-from">
+                    <i class="fas fa-user"></i> ${message.from}
+                    <small>(${message.group}) → ${message.to === 'admin' ? 'Адміністратору' : 'Командиру'}</small>
+                </div>
+                <div class="message-time">${formatDate(message.createdAt)}</div>
+            </div>
+            <div class="message-subject">${message.subject}</div>
+            <div class="message-body">${message.text}</div>
+            <div style="margin-top: 10px;">
+                <button onclick="markMessageRead('${message.id}')" class="btn-secondary" style="padding: 5px 10px; font-size: 0.9rem;">
+                    <i class="fas fa-check"></i> Позначити як прочитане
+                </button>
+                <button onclick="deleteMessage('${message.id}')" class="btn-delete" style="margin-left: 10px;">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
+        container.appendChild(item);
+    });
+}
+
+function markMessageRead(messageId) {
+    const message = database.messages.find(msg => msg.id === messageId);
+    if (message) {
+        message.read = true;
+        saveDatabase();
+        loadMessages();
+    }
+}
+
+function deleteMessage(messageId) {
+    if (!confirm('Видалити це повідомлення?')) return;
+    
+    const index = database.messages.findIndex(msg => msg.id === messageId);
+    if (index !== -1) {
+        database.messages.splice(index, 1);
+        saveDatabase();
+        loadMessages();
+        showNotification('Повідомлення видалено');
+    }
+}
+
+function loadSettings() {
+    document.getElementById('auto-cleanup').value = database.settings.autoCleanup ? 'enabled' : 'disabled';
+    document.getElementById('cleanup-time').value = database.settings.cleanupTime || '23:59';
+}
+
+function saveSettings() {
+    database.settings.autoCleanup = document.getElementById('auto-cleanup').value === 'enabled';
+    database.settings.cleanupTime = document.getElementById('cleanup-time').value;
+    saveDatabase();
+    showNotification('Налаштування збережено!');
+}
+
+// ============= ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =============
+
+function formatDate(dateString) {
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('uk-UA', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    } catch (e) {
+        return dateString;
+    }
+}
+
+function showNotification(message) {
+    const notification = document.createElement('div');
+    notification.className = 'notification';
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'fadeOut 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// ============= АВТООЧИСТКА =============
+
+function checkAutoCleanup() {
+    if (!database.settings.autoCleanup) return;
+    
+    const now = new Date();
+    const [hours, minutes] = (database.settings.cleanupTime || '23:59').split(':').map(Number);
+    
+    if (now.getHours() === hours && now.getMinutes() === minutes) {
+        performCleanup();
+    }
+}
+
+function performCleanup() {
+    const today = new Date().toISOString().split('T')[0];
+    let cleaned = 0;
+    
+    // Отсутствия
+    const oldAbsences = database.absences.length;
+    database.absences = database.absences.filter(a => a.date >= today);
+    cleaned += (oldAbsences - database.absences.length);
+    
+    // Объявления
+    database.announcements.global = database.announcements.global.filter(a => 
+        !a.expiryDate || new Date(a.expiryDate + 'T23:59') >= new Date()
+    );
+    
+    for (const group in database.announcements.group) {
+        database.announcements.group[group] = database.announcements.group[group].filter(a => 
+            !a.expiryDate || new Date(a.expiryDate + 'T23:59') >= new Date()
+        );
+    }
+    
+    // Задачи
+    for (const group in database.tasks) {
+        database.tasks[group] = database.tasks[group].filter(t => 
+            !t.expiryDate || new Date(t.expiryDate + 'T23:59') >= new Date()
+        );
+    }
+    
+    if (cleaned > 0) {
+        saveDatabase();
+        if (currentUser) {
+            loadAnnouncements();
+            loadTasks();
+            loadAbsences();
+        }
+    }
+}
+
+// ============= ИНИЦИАЛИЗАЦИЯ =============
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('password').focus();
+    
+    document.getElementById('password').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            login();
+        }
+    });
+    
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.classList.add('hidden');
+            }
+        });
+    });
+    
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.classList.add('hidden');
+            });
+        }
+    });
+    
+    updateSyncStatus();
+    setInterval(checkAutoCleanup, 60000);
+});
