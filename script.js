@@ -169,8 +169,16 @@ function checkAuth(requiredRole = null) {
 
 // Выход
 function logout() {
+    // Очищаем все данные сессии
     sessionStorage.clear();
     window.location.href = 'index.html';
+}
+
+// Выход из режима просмотра админом
+function exitViewMode() {
+    sessionStorage.removeItem('horting_admin_view');
+    sessionStorage.removeItem('horting_view_team');
+    window.location.href = 'dashboard.html';
 }
 
 // Форматирование даты
@@ -353,6 +361,168 @@ class TeamManager {
         task.completed = false;
         team.tasks.push(task);
         this.saveTeam(teamId, team);
+    }
+    
+    // Получение всех уведомлений для команды (включая общие)
+    static getAllNotificationsForTeam(teamId) {
+        const team = this.getTeam(teamId);
+        const global = JSON.parse(localStorage.getItem('horting_global_notifications') || '[]');
+        
+        // Фильтруем глобальные уведомления для этой команды
+        const teamGlobal = global.filter(notif => 
+            !notif.targetTeams || notif.targetTeams.includes(teamId.toString())
+        );
+        
+        return {
+            team: team.notifications,
+            global: teamGlobal
+        };
+    }
+}
+
+// Модальные окна
+class Modal {
+    static show(title, content, buttons = []) {
+        return new Promise((resolve) => {
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            overlay.id = 'modalOverlay';
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            
+            let buttonsHtml = '';
+            if (buttons.length > 0) {
+                buttonsHtml = `
+                    <div class="modal-actions">
+                        ${buttons.map(btn => 
+                            `<button class="enhanced-btn ${btn.class || ''}" 
+                                    onclick="Modal.close('${btn.value || ''}')">
+                                ${btn.text}
+                            </button>`
+                        ).join('')}
+                    </div>
+                `;
+            }
+            
+            modal.innerHTML = `
+                <h3>${title}</h3>
+                ${content}
+                ${buttonsHtml}
+            `;
+            
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+            
+            // Сохраняем callback для resolve
+            overlay.resolveCallback = resolve;
+        });
+    }
+    
+    static close(value = null) {
+        const overlay = document.getElementById('modalOverlay');
+        if (overlay && overlay.resolveCallback) {
+            overlay.resolveCallback(value);
+        }
+        if (overlay) {
+            overlay.remove();
+        }
+    }
+    
+    static showForm(title, fields) {
+        return new Promise((resolve) => {
+            const formId = 'modalForm_' + Date.now();
+            let formHtml = `<form id="${formId}">`;
+            
+            fields.forEach(field => {
+                formHtml += `
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; color: #e0e1dd;">
+                            ${field.label}
+                        </label>
+                `;
+                
+                if (field.type === 'textarea') {
+                    formHtml += `
+                        <textarea class="enhanced-textarea" 
+                                  name="${field.name}" 
+                                  placeholder="${field.placeholder || ''}"
+                                  ${field.required ? 'required' : ''}
+                                  rows="${field.rows || 4}">${field.value || ''}</textarea>
+                    `;
+                } else if (field.type === 'select') {
+                    formHtml += `
+                        <select class="enhanced-select" 
+                                name="${field.name}" 
+                                ${field.required ? 'required' : ''}>
+                            <option value="">${field.placeholder || 'Оберіть опцію...'}</option>
+                            ${field.options.map(opt => 
+                                `<option value="${opt.value}" ${field.value === opt.value ? 'selected' : ''}>
+                                    ${opt.text}
+                                </option>`
+                            ).join('')}
+                        </select>
+                    `;
+                } else if (field.type === 'checkbox-group') {
+                    formHtml += `<div class="checkbox-group">`;
+                    field.options.forEach(opt => {
+                        formHtml += `
+                            <label class="checkbox-item">
+                                <input type="checkbox" 
+                                       name="${field.name}" 
+                                       value="${opt.value}"
+                                       ${opt.checked ? 'checked' : ''}>
+                                ${opt.text}
+                            </label>
+                        `;
+                    });
+                    formHtml += `</div>`;
+                } else {
+                    formHtml += `
+                        <input class="enhanced-input" 
+                               type="${field.type || 'text'}" 
+                               name="${field.name}" 
+                               value="${field.value || ''}"
+                               placeholder="${field.placeholder || ''}"
+                               ${field.required ? 'required' : ''}>
+                    `;
+                }
+                
+                formHtml += `</div>`;
+            });
+            
+            formHtml += `</form>`;
+            
+            const buttons = [
+                { text: 'Скасувати', class: 'secondary', value: null },
+                { text: 'Зберегти', class: '', value: 'submit' }
+            ];
+            
+            Modal.show(title, formHtml, buttons).then(result => {
+                if (result === 'submit') {
+                    const form = document.getElementById(formId);
+                    if (form.checkValidity()) {
+                        const formData = new FormData(form);
+                        const data = {};
+                        formData.forEach((value, key) => {
+                            if (key.includes('[]')) {
+                                const cleanKey = key.replace('[]', '');
+                                if (!data[cleanKey]) data[cleanKey] = [];
+                                data[cleanKey].push(value);
+                            } else {
+                                data[key] = value;
+                            }
+                        });
+                        resolve(data);
+                    } else {
+                        form.reportValidity();
+                        resolve(null);
+                    }
+                } else {
+                    resolve(null);
+                }
+            });
+        });
     }
 }
 

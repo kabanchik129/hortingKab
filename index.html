@@ -21,8 +21,8 @@
                 <h2>Доступ до системи</h2>
                 <p class="hint">Введіть ваш пароль. Формат: mal1kab123_kam, str4kab456_zam, kyka7 (адмін)</p>
                 <div class="input-group">
-                    <input type="password" id="passwordInput" placeholder="Ваш пароль" autocomplete="off">
-                    <button id="loginBtn">Увійти</button>
+                    <input type="password" class="enhanced-input" id="passwordInput" placeholder="Ваш пароль" autocomplete="off">
+                    <button class="enhanced-btn" id="loginBtn" style="padding: 15px 30px;">Увійти</button>
                 </div>
                 <p id="errorMessage" class="error-message"></p>
                 <div class="password-examples">
@@ -53,6 +53,9 @@
             document.getElementById('passwordInput').addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') login();
             });
+            
+            // Фокус на поле ввода при загрузке
+            document.getElementById('passwordInput').focus();
         }
     </script>
 </body>

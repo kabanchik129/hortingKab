@@ -19,44 +19,201 @@
             </div>
         </header>
 
-        <main>
-            <div class="tabs">
-                <button class="tab-btn active" onclick="showTab('teams')">Команди</button>
-                <button class="tab-btn" onclick="showTab('global')">Загальні сповіщення</button>
-                <button class="tab-btn" onclick="showTab('admin')">Звернення до адміна</button>
-            </div>
+        <div class="admin-nav">
+            <button class="admin-nav-btn active" onclick="showAdminTab('teams')">Команди</button>
+            <button class="admin-nav-btn" onclick="showAdminTab('notifications')">Сповіщення</button>
+            <button class="admin-nav-btn" onclick="showAdminTab('adminMessages')">Звернення</button>
+            <button class="admin-nav-btn" onclick="showAdminTab('addMember')">Додати учасника</button>
+            <button class="admin-nav-btn" onclick="showAdminTab('addNotification')">Нове сповіщення</button>
+        </div>
 
-            <div id="teamsTab">
+        <main>
+            <!-- Вкладка Команды -->
+            <div id="teamsTab" class="admin-tab active">
                 <div class="teams-grid" id="teamsContainer">
                     <!-- Команды будут загружены через JS -->
                 </div>
             </div>
 
-            <div id="globalTab" style="display: none;">
+            <!-- Вкладка Уведомления -->
+            <div id="notificationsTab" class="admin-tab" style="display: none;">
                 <div class="section">
                     <h3>Загальні сповіщення</h3>
                     <div id="globalNotifications"></div>
-                    <button class="add-btn" onclick="addGlobalNotification()">+ Додати сповіщення</button>
+                </div>
+                
+                <div class="section">
+                    <h3>Командні сповіщення</h3>
+                    <select class="enhanced-select" id="teamNotificationsFilter" onchange="loadTeamNotificationsForAdmin()" style="margin-bottom: 20px;">
+                        <option value="">Всі команди</option>
+                        <option value="1">1-ша команда (молодша)</option>
+                        <option value="2">2-га команда (молодша)</option>
+                        <option value="3">3-тя команда (розвідка)</option>
+                        <option value="4">4-та команда (старша)</option>
+                        <option value="5">5-та команда (старша)</option>
+                        <option value="6">6-та команда (старша)</option>
+                    </select>
+                    <div id="teamNotificationsAdmin"></div>
                 </div>
             </div>
 
-            <div id="adminTab" style="display: none;">
+            <!-- Вкладка Обращения -->
+            <div id="adminMessagesTab" class="admin-tab" style="display: none;">
                 <div class="section">
                     <h3>Звернення до адміністратора
-                        <span id="unreadCount" class="role-badge" style="background: #ff6b6b; margin-left: 10px;"></span>
+                        <span id="unreadCount" class="notification-badge">0</span>
                     </h3>
                     
                     <div class="form-row" style="margin-bottom: 20px;">
-                        <input type="text" id="filterTeam" placeholder="Фільтр по команді (1-6)" oninput="filterMessages()">
-                        <select id="filterStatus" onchange="filterMessages()">
+                        <input type="text" class="enhanced-input" id="filterTeam" placeholder="Фільтр по команді (1-6)" oninput="filterMessages()">
+                        <select class="enhanced-select" id="filterStatus" onchange="filterMessages()">
                             <option value="all">Всі</option>
                             <option value="unread">Непрочитані</option>
                             <option value="read">Прочитані</option>
                         </select>
-                        <button onclick="markAllAsRead()">Позначити всі як прочитані</button>
+                        <button class="enhanced-btn" onclick="markAllAsRead()">Позначити всі як прочитані</button>
                     </div>
                     
                     <div id="adminNotifications"></div>
+                </div>
+            </div>
+
+            <!-- Вкладка Добавить участника -->
+            <div id="addMemberTab" class="admin-tab" style="display: none;">
+                <div class="section">
+                    <h3>Додати нового учасника</h3>
+                    <div class="enhanced-card">
+                        <form id="addMemberForm">
+                            <div class="form-row">
+                                <div>
+                                    <label style="display: block; margin-bottom: 8px; color: #e0e1dd;">Команда</label>
+                                    <select class="enhanced-select" name="teamId" required>
+                                        <option value="">Оберіть команду</option>
+                                        <option value="1">1-ша команда (молодша)</option>
+                                        <option value="2">2-га команда (молодша)</option>
+                                        <option value="3">3-тя команда (розвідка)</option>
+                                        <option value="4">4-та команда (старша)</option>
+                                        <option value="5">5-та команда (старша)</option>
+                                        <option value="6">6-та команда (старша)</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label style="display: block; margin-bottom: 8px; color: #e0e1dd;">Повне ім'я</label>
+                                    <input type="text" class="enhanced-input" name="name" placeholder="Іван Іванов" required>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div>
+                                    <label style="display: block; margin-bottom: 8px; color: #e0e1dd;">Позивний</label>
+                                    <input type="text" class="enhanced-input" name="callSign" placeholder="Вовк" required>
+                                </div>
+                                
+                                <div>
+                                    <label style="display: block; margin-bottom: 8px; color: #e0e1dd;">Звання</label>
+                                    <input type="text" class="enhanced-input" name="rank" placeholder="Сержант" required>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div>
+                                    <label style="display: block; margin-bottom: 8px; color: #e0e1dd;">Роль</label>
+                                    <select class="enhanced-select" name="role" required>
+                                        <option value="soldier">Боець</option>
+                                        <option value="deputy">Заступник командира</option>
+                                        <option value="command">Командир</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label style="display: block; margin-bottom: 8px; color: #e0e1dd;">Пароль</label>
+                                    <input type="text" class="enhanced-input" name="password" placeholder="mal1kab123_kam" required>
+                                    <small style="color: #adb5bd; display: block; margin-top: 5px;">
+                                        Формат: mal1kab123_kam або str4kab456_zam
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-top: 25px;">
+                                <button type="submit" class="enhanced-btn" style="width: 100%;">Додати учасника</button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <h3 style="margin-top: 40px;">Існуючі учасники</h3>
+                    <div id="allMembersList"></div>
+                </div>
+            </div>
+
+            <!-- Вкладка Новое уведомление -->
+            <div id="addNotificationTab" class="admin-tab" style="display: none;">
+                <div class="section">
+                    <h3>Створити нове сповіщення</h3>
+                    <div class="enhanced-card">
+                        <form id="addNotificationForm">
+                            <div class="form-row">
+                                <div>
+                                    <label style="display: block; margin-bottom: 8px; color: #e0e1dd;">Тип сповіщення</label>
+                                    <select class="enhanced-select" name="type" id="notificationType" required onchange="toggleTargetTeams()">
+                                        <option value="global">Загальне сповіщення</option>
+                                        <option value="team">Командне сповіщення</option>
+                                        <option value="selected">Для вибраних команд</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div id="targetTeamsSection" style="display: none; margin-bottom: 20px;">
+                                <label style="display: block; margin-bottom: 8px; color: #e0e1dd;">Для команд:</label>
+                                <div class="checkbox-group">
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" name="targetTeams" value="1"> 1-ша команда
+                                    </label>
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" name="targetTeams" value="2"> 2-га команда
+                                    </label>
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" name="targetTeams" value="3"> 3-тя команда
+                                    </label>
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" name="targetTeams" value="4"> 4-та команда
+                                    </label>
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" name="targetTeams" value="5"> 5-та команда
+                                    </label>
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" name="targetTeams" value="6"> 6-та команда
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div id="singleTeamSection" style="display: none; margin-bottom: 20px;">
+                                <label style="display: block; margin-bottom: 8px; color: #e0e1dd;">Команда:</label>
+                                <select class="enhanced-select" name="singleTeam">
+                                    <option value="1">1-ша команда (молодша)</option>
+                                    <option value="2">2-га команда (молодша)</option>
+                                    <option value="3">3-тя команда (розвідка)</option>
+                                    <option value="4">4-та команда (старша)</option>
+                                    <option value="5">5-та команда (старша)</option>
+                                    <option value="6">6-та команда (старша)</option>
+                                </select>
+                            </div>
+                            
+                            <div style="margin-bottom: 20px;">
+                                <label style="display: block; margin-bottom: 8px; color: #e0e1dd;">Заголовок</label>
+                                <input type="text" class="enhanced-input" name="title" placeholder="Важлива інформація" required>
+                            </div>
+                            
+                            <div style="margin-bottom: 20px;">
+                                <label style="display: block; margin-bottom: 8px; color: #e0e1dd;">Текст сповіщення</label>
+                                <textarea class="enhanced-textarea" name="message" placeholder="Текст вашого сповіщення..." required></textarea>
+                            </div>
+                            
+                            <div>
+                                <button type="submit" class="enhanced-btn" style="width: 100%;">Опублікувати сповіщення</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </main>
@@ -73,6 +230,11 @@
             loadTeams();
             loadGlobalNotifications();
             filterMessages(); // Загружаем обращения с фильтрами
+            loadAllMembers();
+            
+            // Устанавливаем обработчики форм
+            document.getElementById('addMemberForm')?.addEventListener('submit', handleAddMember);
+            document.getElementById('addNotificationForm')?.addEventListener('submit', handleAddNotification);
         }
 
         function loadTeams() {
@@ -119,8 +281,8 @@
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                             <h3 style="margin: 0;">${teamConfig.name}</h3>
                             <div>
-                                <button onclick="goToTeam(${teamId})" style="padding: 8px 12px; background: #415a77; font-size: 0.9rem;">
-                                    Перейти
+                                <button class="enhanced-btn secondary" onclick="goToTeam(${teamId})" style="padding: 8px 16px; font-size: 0.9rem;">
+                                    Перейти до команди
                                 </button>
                             </div>
                         </div>
@@ -146,15 +308,81 @@
             const container = document.getElementById('globalNotifications');
             
             container.innerHTML = notifications.reverse().map(notif => `
-                <div class="notification-item">
-                    <strong>${notif.title}</strong>
-                    <p>${notif.message}</p>
+                <div class="enhanced-card">
+                    <strong style="color: #ffd60a; font-size: 1.1rem;">${notif.title}</strong>
+                    <p style="margin: 10px 0;">${notif.message}</p>
                     <div class="notification-date">
                         ${formatDate(notif.date)} • ${notif.author}
-                        <button onclick="deleteGlobalNotification('${notif.id}')" style="margin-left: 10px; background: #ff6b6b; padding: 2px 8px; font-size: 0.8rem;">Видалити</button>
+                        ${notif.targetTeams ? `<br><small>Для команд: ${notif.targetTeams.map(t => CONFIG.teams[t]?.name).join(', ')}</small>` : ''}
+                        <button onclick="deleteGlobalNotification('${notif.id}')" class="enhanced-btn danger" style="margin-left: 10px; padding: 4px 12px; font-size: 0.8rem;">Видалити</button>
                     </div>
                 </div>
             `).join('');
+        }
+
+        function loadTeamNotificationsForAdmin() {
+            const teamId = document.getElementById('teamNotificationsFilter').value;
+            const container = document.getElementById('teamNotificationsAdmin');
+            
+            if (!teamId) {
+                // Показываем все уведомления всех команд
+                const teams = TeamManager.getTeams();
+                let allNotifications = [];
+                
+                Object.entries(teams).forEach(([id, team]) => {
+                    team.notifications.forEach(notif => {
+                        allNotifications.push({
+                            ...notif,
+                            teamId: id,
+                            teamName: CONFIG.teams[id]?.name
+                        });
+                    });
+                });
+                
+                allNotifications.sort((a, b) => new Date(b.date) - new Date(a.date));
+                
+                container.innerHTML = allNotifications.map(notif => `
+                    <div class="enhanced-card" style="border-left-color: ${CONFIG.teams[notif.teamId]?.color ? 'var(--' + CONFIG.teams[notif.teamId].color + ')' : '#415a77'};">
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div style="flex: 1;">
+                                <strong style="color: #ffd60a; font-size: 1.1rem;">${notif.title}</strong>
+                                <p style="margin: 10px 0;">${notif.message}</p>
+                                <div class="notification-date">
+                                    ${formatDate(notif.date)} • ${notif.author}
+                                    <br><small>Команда: ${notif.teamName}</small>
+                                </div>
+                            </div>
+                            <div>
+                                <button onclick="deleteTeamNotification('${notif.teamId}', '${notif.id}')" class="enhanced-btn danger" style="padding: 4px 12px; font-size: 0.8rem;">Видалити</button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                // Показываем уведомления конкретной команды
+                const team = TeamManager.getTeam(teamId);
+                const teamName = CONFIG.teams[teamId]?.name;
+                
+                container.innerHTML = team.notifications.reverse().map(notif => `
+                    <div class="enhanced-card">
+                        <strong style="color: #ffd60a; font-size: 1.1rem;">${notif.title}</strong>
+                        <p style="margin: 10px 0;">${notif.message}</p>
+                        <div class="notification-date">
+                            ${formatDate(notif.date)} • ${notif.author}
+                            <button onclick="deleteTeamNotification('${teamId}', '${notif.id}')" class="enhanced-btn danger" style="margin-left: 10px; padding: 4px 12px; font-size: 0.8rem;">Видалити</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function deleteTeamNotification(teamId, notificationId) {
+            if (!confirm('Видалити це сповіщення?')) return;
+            
+            const team = TeamManager.getTeam(teamId);
+            team.notifications = team.notifications.filter(n => n.id !== notificationId);
+            TeamManager.saveTeam(teamId, team);
+            loadTeamNotificationsForAdmin();
         }
 
         // Фильтрация сообщений
@@ -198,10 +426,10 @@
             const unreadCount = notifications.filter(n => !n.read).length;
             
             // Обновляем счетчик непрочитанных
-            document.getElementById('unreadCount').textContent = `${unreadCount} непрочитаних`;
+            document.getElementById('unreadCount').textContent = unreadCount;
             
             if (!notifications.length) {
-                container.innerHTML = '<p>Немає звернень</p>';
+                container.innerHTML = '<div class="enhanced-card"><p>Немає звернень</p></div>';
                 return;
             }
             
@@ -209,11 +437,13 @@
             notifications.sort((a, b) => new Date(b.date) - new Date(a.date));
             
             container.innerHTML = notifications.map(notif => `
-                <div class="notification-item" style="border-left-color: ${notif.read ? '#415a77' : '#9d4edd'}; background: ${notif.read ? 'rgba(255,255,255,0.03)' : 'rgba(157, 78, 221, 0.1)'};">
+                <div class="enhanced-card" style="border-left-color: ${notif.read ? '#415a77' : '#9d4edd'}; background: ${notif.read ? 'rgba(255,255,255,0.03)' : 'rgba(157, 78, 221, 0.1)'};">
                     <div style="display: flex; justify-content: space-between; align-items: start;">
                         <div style="flex: 1;">
-                            <strong>${notif.fromTeam ? 'Команда ' + notif.fromTeam + ': ' + CONFIG.teams[notif.fromTeam]?.name : 'Невідома команда'}</strong>
-                            <p style="margin: 8px 0;">${notif.message}</p>
+                            <strong style="color: ${notif.read ? '#e0e1dd' : '#ffd60a'};">
+                                ${notif.fromTeam ? 'Команда ' + notif.fromTeam + ': ' + CONFIG.teams[notif.fromTeam]?.name : 'Невідома команда'}
+                            </strong>
+                            <p style="margin: 10px 0;">${notif.message}</p>
                             <div class="notification-date">
                                 ${formatDate(notif.date)}
                                 ${notif.read ? '<span style="color: #1a936f; margin-left: 10px;">✓ Прочитано</span>' : 
@@ -222,14 +452,14 @@
                         </div>
                         <div style="display: flex; flex-direction: column; gap: 5px; margin-left: 10px;">
                             ${!notif.read ? 
-                                `<button onclick="markAsRead('${notif.id}')" style="background: #1a936f; padding: 5px 10px; font-size: 0.8rem; white-space: nowrap;">
+                                `<button onclick="markAsRead('${notif.id}')" class="enhanced-btn" style="padding: 5px 10px; font-size: 0.8rem; white-space: nowrap;">
                                     Позначити як прочитане
                                 </button>` : 
-                                `<button onclick="markAsUnread('${notif.id}')" style="background: #ff9e00; padding: 5px 10px; font-size: 0.8rem; white-space: nowrap;">
+                                `<button onclick="markAsUnread('${notif.id}')" class="enhanced-btn secondary" style="padding: 5px 10px; font-size: 0.8rem; white-space: nowrap;">
                                     Позначити як непрочитане
                                 </button>`
                             }
-                            <button onclick="deleteAdminNotification('${notif.id}')" style="background: #ff6b6b; padding: 5px 10px; font-size: 0.8rem; white-space: nowrap;">
+                            <button onclick="deleteAdminNotification('${notif.id}')" class="enhanced-btn danger" style="padding: 5px 10px; font-size: 0.8rem; white-space: nowrap;">
                                 Видалити
                             </button>
                         </div>
@@ -262,22 +492,6 @@
             }
         }
 
-        function addGlobalNotification() {
-            const title = prompt('Заголовок сповіщення:');
-            if (!title) return;
-            
-            const message = prompt('Текст сповіщення:');
-            if (!message) return;
-            
-            TeamManager.addGlobalNotification({
-                title: title,
-                message: message
-            }, 'Адміністратор');
-            
-            loadGlobalNotifications();
-            alert('Сповіщення додано!');
-        }
-
         function deleteGlobalNotification(id) {
             if (!confirm('Видалити це сповіщення?')) return;
             
@@ -304,14 +518,14 @@
             window.location.href = `team.html?view=${teamId}`;
         }
 
-        function showTab(tabName) {
+        function showAdminTab(tabName) {
             // Скрыть все табы
-            document.querySelectorAll('[id$="Tab"]').forEach(tab => {
+            document.querySelectorAll('.admin-tab').forEach(tab => {
                 tab.style.display = 'none';
             });
             
             // Убрать активный класс со всех кнопок
-            document.querySelectorAll('.tab-btn').forEach(btn => {
+            document.querySelectorAll('.admin-nav-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
             
@@ -320,6 +534,184 @@
             
             // Активировать кнопку
             event.target.classList.add('active');
+        }
+
+        function toggleTargetTeams() {
+            const type = document.getElementById('notificationType').value;
+            const targetSection = document.getElementById('targetTeamsSection');
+            const singleSection = document.getElementById('singleTeamSection');
+            
+            if (type === 'selected') {
+                targetSection.style.display = 'block';
+                singleSection.style.display = 'none';
+            } else if (type === 'team') {
+                targetSection.style.display = 'none';
+                singleSection.style.display = 'block';
+            } else {
+                targetSection.style.display = 'none';
+                singleSection.style.display = 'none';
+            }
+        }
+
+        // Добавление участника (админом)
+        async function handleAddMember(e) {
+            e.preventDefault();
+            
+            const form = e.target;
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+            
+            try {
+                // Проверяем пароль
+                const userData = parsePassword(data.password);
+                if (!userData) {
+                    alert('Невірний формат пароля! Приклад: mal1kab123_kam');
+                    return;
+                }
+                
+                // Проверяем, совпадает ли команда в пароле с выбранной
+                if (userData.teamId !== parseInt(data.teamId)) {
+                    alert('Пароль не відповідає вибраній команді!');
+                    return;
+                }
+                
+                // Добавляем участника
+                TeamManager.addMember(data.teamId, {
+                    name: data.name,
+                    callSign: data.callSign,
+                    rank: data.rank,
+                    role: data.role
+                });
+                
+                // Показываем успешное сообщение
+                alert(`Учасника ${data.name} успішно додано до команди ${CONFIG.teams[data.teamId].name}!`);
+                
+                // Очищаем форму
+                form.reset();
+                
+                // Обновляем списки
+                loadTeams();
+                loadAllMembers();
+                
+            } catch (error) {
+                alert('Помилка при додаванні учасника: ' + error.message);
+            }
+        }
+
+        // Загрузка всех участников
+        function loadAllMembers() {
+            const container = document.getElementById('allMembersList');
+            const teams = TeamManager.getTeams();
+            
+            let html = '';
+            
+            Object.entries(teams).forEach(([teamId, team]) => {
+                if (team.members.length > 0) {
+                    html += `
+                        <div class="enhanced-card" style="margin-bottom: 20px;">
+                            <h4 style="color: #ffd60a; margin-bottom: 15px;">${CONFIG.teams[teamId].name}</h4>
+                            ${team.members.map(member => `
+                                <div class="member-item">
+                                    <div>
+                                        <strong>${member.callSign}</strong> (${member.name})
+                                        <br><small>${member.rank}</small>
+                                    </div>
+                                    <div>
+                                        <span class="role-badge ${member.role === 'command' ? 'role-kam' : 
+                                                              member.role === 'deputy' ? 'role-zam' : ''}">
+                                            ${member.role === 'command' ? 'Командир' : 
+                                             member.role === 'deputy' ? 'Заступник' : 'Боець'}
+                                        </span>
+                                        <button onclick="deleteMemberAsAdmin('${teamId}', '${member.id}')" 
+                                                class="enhanced-btn danger" 
+                                                style="margin-left: 10px; padding: 4px 12px; font-size: 0.8rem;">
+                                            Видалити
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+            });
+            
+            container.innerHTML = html || '<p>Немає учасників</p>';
+        }
+
+        // Удаление участника админом
+        function deleteMemberAsAdmin(teamId, memberId) {
+            if (!confirm('Видалити цього учасника?')) return;
+            
+            TeamManager.removeMember(teamId, memberId);
+            loadTeams();
+            loadAllMembers();
+            alert('Учасника успішно видалено!');
+        }
+
+        // Добавление уведомления (админом)
+        async function handleAddNotification(e) {
+            e.preventDefault();
+            
+            const form = e.target;
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+            
+            const targetTeams = formData.getAll('targetTeams');
+            
+            try {
+                if (data.type === 'global') {
+                    // Глобальное уведомление для всех
+                    TeamManager.addGlobalNotification({
+                        title: data.title,
+                        message: data.message
+                    }, 'Адміністратор');
+                    
+                    alert('Загальне сповіщення успішно опубліковано!');
+                    
+                } else if (data.type === 'team') {
+                    // Уведомление для одной команды
+                    TeamManager.addTeamNotification(
+                        data.singleTeam,
+                        { title: data.title, message: data.message },
+                        'Адміністратор'
+                    );
+                    
+                    alert(`Сповіщення успішно опубліковано для команди ${CONFIG.teams[data.singleTeam].name}!`);
+                    
+                } else if (data.type === 'selected' && targetTeams.length > 0) {
+                    // Уведомление для выбранных команд
+                    targetTeams.forEach(teamId => {
+                        TeamManager.addTeamNotification(
+                            teamId,
+                            { title: data.title, message: data.message },
+                            'Адміністратор'
+                        );
+                    });
+                    
+                    // Также сохраняем как глобальное с отметкой о командах
+                    TeamManager.addGlobalNotification({
+                        title: data.title,
+                        message: data.message,
+                        targetTeams: targetTeams
+                    }, 'Адміністратор');
+                    
+                    alert(`Сповіщення успішно опубліковано для ${targetTeams.length} команд!`);
+                } else {
+                    alert('Будь ласка, виберіть команди для сповіщення!');
+                    return;
+                }
+                
+                // Очищаем форму
+                form.reset();
+                
+                // Обновляем списки
+                loadGlobalNotifications();
+                loadTeamNotificationsForAdmin();
+                loadTeams();
+                
+            } catch (error) {
+                alert('Помилка при публікації сповіщення: ' + error.message);
+            }
         }
 
         // Загрузка при открытии

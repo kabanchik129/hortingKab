@@ -1,346 +1,268 @@
-/* Загальні стилі */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+/* Добавьте эти стили в конец файла */
 
-body {
-    font-family: 'Roboto', sans-serif;
-    background: linear-gradient(135deg, #0d1b2a 0%, #1b3a4b 100%);
-    color: #e0e1dd;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-}
-
-.container {
-    width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-    flex: 1;
-}
-
-/* Сторінка входу */
-.login-page header {
-    text-align: center;
-    padding: 40px 0 20px;
-}
-
-.login-page h1 {
-    font-family: 'Roboto Slab', serif;
-    font-size: 4rem;
-    color: #ffd60a;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-    letter-spacing: 2px;
-}
-
-.subtitle {
-    font-size: 1.2rem;
-    color: #adb5bd;
-    margin-top: 10px;
-}
-
-.login-card {
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(10px);
-    border-radius: 15px;
-    padding: 40px;
-    max-width: 500px;
-    margin: 40px auto;
-    border: 1px solid rgba(255, 214, 10, 0.2);
-}
-
-.login-card h2 {
-    color: #ffd60a;
-    margin-bottom: 20px;
-    text-align: center;
-}
-
-.hint {
-    color: #adb5bd;
-    margin-bottom: 25px;
-    font-size: 0.9rem;
-    text-align: center;
-}
-
-.input-group {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-}
-
-.input-group input {
-    flex: 1;
-    padding: 15px;
-    border: 1px solid #415a77;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.1);
+/* Улучшенные поля ввода */
+.enhanced-input {
+    padding: 14px 16px;
+    border: 2px solid #415a77;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.12);
     color: white;
-    font-size: 1rem;
+    font-size: 16px;
+    transition: all 0.3s;
+    width: 100%;
 }
 
-.input-group input:focus {
+.enhanced-input:focus {
     outline: none;
     border-color: #ffd60a;
+    background: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 0 0 3px rgba(255, 214, 10, 0.1);
 }
 
-button {
-    padding: 15px 30px;
-    background: #ffd60a;
+.enhanced-select {
+    padding: 14px 16px;
+    border: 2px solid #415a77;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.12);
+    color: white;
+    font-size: 16px;
+    transition: all 0.3s;
+    width: 100%;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    background-size: 20px;
+}
+
+.enhanced-textarea {
+    padding: 14px 16px;
+    border: 2px solid #415a77;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.12);
+    color: white;
+    font-size: 16px;
+    transition: all 0.3s;
+    width: 100%;
+    min-height: 120px;
+    resize: vertical;
+    line-height: 1.5;
+}
+
+.enhanced-btn {
+    padding: 14px 28px;
+    background: linear-gradient(135deg, #ffd60a 0%, #ffc300 100%);
     color: #0d1b2a;
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.3s;
-    font-size: 1rem;
-}
-
-button:hover {
-    background: #ffc300;
-    transform: translateY(-2px);
-}
-
-.error-message {
-    color: #ff6b6b;
+    font-size: 16px;
     text-align: center;
-    min-height: 20px;
-    margin: 10px 0;
 }
 
-.password-examples {
-    margin-top: 30px;
-    padding: 15px;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 8px;
-    font-size: 0.9rem;
+.enhanced-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(255, 214, 10, 0.2);
 }
 
-.password-examples ul {
-    margin-top: 10px;
-    padding-left: 20px;
-}
-
-.password-examples code {
-    background: rgba(255, 214, 10, 0.2);
-    padding: 2px 6px;
-    border-radius: 4px;
-    color: #ffd60a;
-}
-
-footer {
-    text-align: center;
-    padding: 20px;
-    color: #6c757d;
-    font-size: 0.9rem;
-    margin-top: auto;
-}
-
-/* Стилі для панелі адміна/командира */
-.dashboard header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px 0;
-    border-bottom: 1px solid #415a77;
-    margin-bottom: 30px;
-}
-
-.user-info {
-    text-align: right;
-}
-
-.user-info p {
-    margin-bottom: 5px;
-}
-
-.logout-btn {
-    padding: 8px 16px;
-    background: transparent;
-    border: 1px solid #ff6b6b;
-    color: #ff6b6b;
-}
-
-.logout-btn:hover {
-    background: rgba(255, 107, 107, 0.1);
-}
-
-.teams-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 25px;
-    margin-bottom: 40px;
-}
-
-.team-card {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-    padding: 20px;
-    border: 1px solid #415a77;
-    transition: all 0.3s;
-}
-
-.team-card:hover {
-    border-color: #ffd60a;
-    transform: translateY(-5px);
-}
-
-.team-card h3 {
-    color: #ffd60a;
-    margin-bottom: 15px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #415a77;
-}
-
-.team-card.mal1 { border-left: 4px solid #ff6b6b; }
-.team-card.mal2 { border-left: 4px solid #4ecdc4; }
-.team-card.mal3 { border-left: 4px solid #1a936f; }
-.team-card.str4 { border-left: 4px solid #ff9e00; }
-.team-card.str5 { border-left: 4px solid #9d4edd; }
-.team-card.str6 { border-left: 4px solid #00bbf9; }
-
-.team-members {
-    margin-bottom: 20px;
-}
-
-.member-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 0;
-    border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
-}
-
-.member-item:last-child {
-    border-bottom: none;
-}
-
-.role-badge {
-    font-size: 0.8rem;
-    padding: 2px 8px;
-    border-radius: 12px;
-    background: #415a77;
-}
-
-.role-kam { background: #d00000; }
-.role-zam { background: #e85d04; }
-.role-admin { background: #ffd60a; color: #0d1b2a; }
-
-/* Стилі для сторінки команди */
-.team-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 30px;
-}
-
-.section {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-    padding: 25px;
-    margin-bottom: 30px;
-}
-
-.section h3 {
-    color: #ffd60a;
-    margin-bottom: 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.add-btn {
-    padding: 8px 16px;
-    font-size: 0.9rem;
-}
-
-.form-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    margin-bottom: 15px;
-}
-
-.form-row input,
-.form-row select,
-.form-row textarea {
-    padding: 12px;
-    border: 1px solid #415a77;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.1);
+.enhanced-btn.secondary {
+    background: linear-gradient(135deg, #415a77 0%, #1b3a4b 100%);
     color: white;
 }
 
-.form-row textarea {
-    resize: vertical;
-    min-height: 80px;
+.enhanced-btn.danger {
+    background: linear-gradient(135deg, #ff6b6b 0%, #e85d04 100%);
+    color: white;
 }
 
-.notification-item {
-    padding: 15px;
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 8px;
-    margin-bottom: 15px;
-    border-left: 4px solid #ffd60a;
-}
-
-.notification-item.team {
-    border-left-color: #4ecdc4;
-}
-
-.notification-date {
-    font-size: 0.8rem;
-    color: #adb5bd;
-    margin-top: 5px;
-}
-
-.absence-form {
-    margin-top: 20px;
+/* Модальные окна */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
     padding: 20px;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 8px;
 }
 
-.absence-form h4 {
-    margin-bottom: 15px;
+.modal {
+    background: linear-gradient(135deg, #1b3a4b 0%, #0d1b2a 100%);
+    border-radius: 20px;
+    padding: 30px;
+    max-width: 500px;
+    width: 100%;
+    border: 1px solid rgba(255, 214, 10, 0.3);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+.modal h3 {
     color: #ffd60a;
+    margin-bottom: 20px;
+    text-align: center;
 }
 
-.absence-item {
-    padding: 15px;
-    background: rgba(255, 107, 107, 0.1);
-    border-radius: 8px;
-    margin-bottom: 10px;
-    border-left: 4px solid #ff6b6b;
+.modal-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 25px;
 }
 
-.tabs {
+.modal-actions .enhanced-btn {
+    flex: 1;
+}
+
+/* Улучшенные карточки */
+.enhanced-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    padding: 25px;
+    border: 1px solid #415a77;
+    transition: all 0.3s;
+    margin-bottom: 20px;
+}
+
+.enhanced-card:hover {
+    border-color: #ffd60a;
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+/* Навигация админа */
+.admin-nav {
     display: flex;
     gap: 10px;
     margin-bottom: 30px;
-    flex-wrap: wrap;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid #415a77;
 }
 
-.tab-btn {
+.admin-nav-btn {
     padding: 12px 24px;
-    background: rgba(255, 255, 255, 0.05);
+    background: transparent;
     border: 1px solid #415a77;
     color: #adb5bd;
-    white-space: nowrap;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
 }
 
-.tab-btn.active {
+.admin-nav-btn:hover {
+    background: rgba(255, 214, 10, 0.1);
+    border-color: #ffd60a;
+    color: #ffd60a;
+}
+
+.admin-nav-btn.active {
     background: #ffd60a;
     color: #0d1b2a;
     border-color: #ffd60a;
 }
 
-.view-badge {
-    background: #9d4edd;
+/* Индикатор режима просмотра */
+.view-mode-indicator {
+    background: linear-gradient(135deg, #9d4edd 0%, #7b2cbf 100%);
     color: white;
-    padding: 3px 8px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: 15px;
+}
+
+.back-to-admin {
+    margin-left: 15px;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #9d4edd 0%, #7b2cbf 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.back-to-admin:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(157, 78, 221, 0.3);
+}
+
+/* Чекбоксы и радиокнопки */
+.checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin: 15px 0;
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.checkbox-item input[type="checkbox"],
+.checkbox-item input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #ffd60a;
+}
+
+/* Уведомления */
+.notification-badge {
+    background: #ff6b6b;
+    color: white;
+    padding: 2px 8px;
     border-radius: 12px;
     font-size: 0.8rem;
-    margin-left: 10px;
+    margin-left: 8px;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+    
+    .tabs {
+        overflow-x: auto;
+        padding-bottom: 10px;
+    }
+    
+    .tab-btn {
+        padding: 10px 16px;
+        font-size: 0.9rem;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .admin-nav {
+        flex-wrap: wrap;
+    }
+    
+    .admin-nav-btn {
+        padding: 10px 16px;
+        font-size: 0.9rem;
+    }
+    
+    .login-page h1 {
+        font-size: 3rem;
+    }
+    
+    .login-card {
+        padding: 25px;
+        margin: 20px auto;
+    }
 }

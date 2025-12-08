@@ -14,6 +14,11 @@
                 <p id="userRole">Роль: Завантаження...</p>
             </div>
             <div class="user-info">
+                <div id="adminViewControls" style="display: none;">
+                    <button class="back-to-admin" onclick="exitViewMode()">
+                        ← Назад до адмін-панелі
+                    </button>
+                </div>
                 <p id="userInfo"></p>
                 <button class="logout-btn" onclick="logout()">Вийти</button>
             </div>
@@ -39,7 +44,7 @@
                     <h3>Сповіщення команди</h3>
                     <div id="teamNotifications"></div>
                     <div id="addNotificationSection" style="display: none;">
-                        <button class="add-btn" onclick="showAddNotificationForm()">+ Додати сповіщення</button>
+                        <button class="enhanced-btn" onclick="showAddNotificationForm()">+ Додати сповіщення</button>
                     </div>
                 </div>
                 
@@ -55,7 +60,7 @@
                     <h3>Склад команди</h3>
                     <div id="membersList"></div>
                     <div id="addMemberSection" style="display: none;">
-                        <button class="add-btn" onclick="showAddMemberForm()">+ Додати члена команди</button>
+                        <button class="enhanced-btn" onclick="showAddMemberForm()">+ Додати члена команди</button>
                     </div>
                 </div>
             </div>
@@ -74,7 +79,7 @@
                     <h3>Завдання команди</h3>
                     <div id="tasksList"></div>
                     <div id="addTaskSection" style="display: none;">
-                        <button class="add-btn" onclick="showAddTaskForm()">+ Додати завдання</button>
+                        <button class="enhanced-btn" onclick="showAddTaskForm()">+ Додати завдання</button>
                     </div>
                 </div>
             </div>
@@ -83,18 +88,18 @@
             <div id="absenceTab" style="display: none;">
                 <div class="section">
                     <h3>Повідомити про відсутність</h3>
-                    <div class="absence-form">
+                    <div class="enhanced-card">
                         <p><strong>Увага:</strong> Повідомлення автоматично видаляється в день відсутності о 23:59</p>
-                        <div class="form-row">
-                            <input type="text" id="absenceName" placeholder="Ваше ім'я">
-                            <input type="date" id="absenceDate">
-                            <select id="absenceReason">
+                        <div class="form-row" style="margin-top: 20px;">
+                            <input type="text" class="enhanced-input" id="absenceName" placeholder="Ваше ім'я">
+                            <input type="date" class="enhanced-input" id="absenceDate">
+                            <select class="enhanced-select" id="absenceReason">
                                 <option value="хвороба">Хвороба</option>
                                 <option value="сімейні обставини">Сімейні обставини</option>
                                 <option value="навчання">Навчання</option>
                                 <option value="інше">Інша причина</option>
                             </select>
-                            <button onclick="reportAbsence()">Надіслати командиру</button>
+                            <button class="enhanced-btn" onclick="reportAbsence()">Надіслати командиру</button>
                         </div>
                     </div>
                     
@@ -104,17 +109,17 @@
                 
                 <div class="section">
                     <h3>Звернення до адміністратора</h3>
-                    <div class="absence-form">
+                    <div class="enhanced-card">
                         <p>Тут ви можете звернутися до адміністратора системи</p>
-                        <div class="form-row">
-                            <textarea id="adminMessage" placeholder="Ваше повідомлення адміністратору..." rows="3" style="grid-column: 1 / -1; padding: 12px; border: 1px solid #415a77; border-radius: 8px; background: rgba(255, 255, 255, 0.1); color: white;"></textarea>
-                            <select id="messageType" style="grid-column: span 2;">
+                        <div class="form-row" style="margin-top: 20px;">
+                            <textarea class="enhanced-textarea" id="adminMessage" placeholder="Ваше повідомлення адміністратору..." rows="3" style="grid-column: 1 / -1;"></textarea>
+                            <select class="enhanced-select" id="messageType" style="grid-column: span 2;">
                                 <option value="проблема">Проблема з сайтом</option>
                                 <option value="питання">Запитання</option>
                                 <option value="пропозиція">Пропозиція</option>
                                 <option value="інше">Інше</option>
                             </select>
-                            <button onclick="sendAdminMessage()" style="grid-column: span 2;">Надіслати адміністратору</button>
+                            <button class="enhanced-btn" onclick="sendAdminMessage()" style="grid-column: span 2;">Надіслати адміністратору</button>
                         </div>
                     </div>
                     
@@ -130,6 +135,7 @@
         let currentUser = null;
         let currentTeam = null;
         let canEdit = false;
+        let isAdminView = false;
 
         // Инициализация
         function initTeamPage() {
@@ -139,6 +145,7 @@
             
             if (adminView === 'true' && viewTeam) {
                 // Админ просматривает команду
+                isAdminView = true;
                 currentUser = {
                     role: 'admin_view',
                     teamId: parseInt(viewTeam),
@@ -146,14 +153,19 @@
                     isDeputy: true,
                     teamType: viewTeam <= 3 ? 'mal' : 'str'
                 };
-                canEdit = false; // Админ только просматривает
+                canEdit = true; // Админ может редактировать в режиме просмотра
+                
+                // Показываем кнопку возврата
+                document.getElementById('adminViewControls').style.display = 'block';
                 
                 document.getElementById('userInfo').textContent = 
-                    `Перегляд команди ${viewTeam} (адміністратор)`;
-                document.getElementById('userRole').textContent = 'Роль: Перегляд (адмін)';
-                document.getElementById('userRole').innerHTML += '<span class="view-badge">Перегляд</span>';
+                    `Перегляд команди ${viewTeam}`;
+                document.getElementById('userRole').innerHTML = 
+                    `<span class="view-mode-indicator">🔍 Режим перегляду адміна</span>`;
+                    
             } else {
                 // Обычный пользователь
+                isAdminView = false;
                 currentUser = checkAuth();
                 if (!currentUser) return;
                 
@@ -197,7 +209,7 @@
             document.getElementById('absenceDate').valueAsDate = tomorrow;
             
             // Устанавливаем имя из данных пользователя
-            if (currentUser.role !== 'admin_view') {
+            if (!isAdminView) {
                 const team = TeamManager.getTeam(currentUser.teamId);
                 const member = team.members.find(m => m.callSign.includes('Командир') || m.callSign.includes('Заступник') || m.callSign);
                 if (member) {
@@ -215,7 +227,7 @@
             loadTeamMembers();
             loadTeamNotifications();
             loadAllTeamNotifications();
-            loadGlobalNotifications();
+            loadGlobalNotificationsForTeam();
             loadTasks();
             loadAbsences();
         }
@@ -229,11 +241,11 @@
             }
             
             container.innerHTML = currentTeam.members.map(member => `
-                <div class="member-item">
+                <div class="enhanced-card" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <div>
-                        <strong>${member.callSign}</strong><br>
-                        ${member.name}<br>
-                        <small>${member.rank}</small>
+                        <strong style="color: #ffd60a; font-size: 1.1rem;">${member.callSign}</strong>
+                        <p style="margin: 5px 0;">${member.name}</p>
+                        <small style="color: #adb5bd;">${member.rank}</small>
                     </div>
                     <div>
                         <span class="role-badge ${member.role === 'command' ? 'role-kam' : 
@@ -241,7 +253,13 @@
                             ${member.role === 'command' ? 'Командир' : 
                              member.role === 'deputy' ? 'Заступник' : 'Боець'}
                         </span>
-                        ${canEdit ? `<button onclick="removeMember('${member.id}')" style="margin-left: 10px; background: #ff6b6b; padding: 2px 8px; font-size: 0.8rem;">Видалити</button>` : ''}
+                        ${canEdit ? `
+                            <button onclick="removeMember('${member.id}')" 
+                                    class="enhanced-btn danger" 
+                                    style="margin-left: 10px; padding: 6px 12px; font-size: 0.8rem;">
+                                Видалити
+                            </button>
+                        ` : ''}
                     </div>
                 </div>
             `).join('');
@@ -257,9 +275,9 @@
             }
             
             container.innerHTML = recent.map(notif => `
-                <div class="notification-item team">
-                    <strong>${notif.title}</strong>
-                    <p>${notif.message}</p>
+                <div class="enhanced-card">
+                    <strong style="color: #ffd60a; font-size: 1.1rem;">${notif.title}</strong>
+                    <p style="margin: 10px 0;">${notif.message}</p>
                     <div class="notification-date">
                         ${formatDate(notif.date)} • ${notif.author}
                     </div>
@@ -277,21 +295,39 @@
             }
             
             container.innerHTML = all.map(notif => `
-                <div class="notification-item team">
-                    <strong>${notif.title}</strong>
-                    <p>${notif.message}</p>
-                    <div class="notification-date">
-                        ${formatDate(notif.date)} • ${notif.author}
-                        ${canEdit ? `<button onclick="deleteNotification('${notif.id}')" style="margin-left: 10px; background: #ff6b6b; padding: 2px 8px; font-size: 0.8rem;">Видалити</button>` : ''}
+                <div class="enhanced-card">
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <div style="flex: 1;">
+                            <strong style="color: #ffd60a; font-size: 1.1rem;">${notif.title}</strong>
+                            <p style="margin: 10px 0;">${notif.message}</p>
+                            <div class="notification-date">
+                                ${formatDate(notif.date)} • ${notif.author}
+                            </div>
+                        </div>
+                        ${canEdit ? `
+                            <div>
+                                <button onclick="deleteNotification('${notif.id}')" 
+                                        class="enhanced-btn danger" 
+                                        style="padding: 6px 12px; font-size: 0.8rem;">
+                                    Видалити
+                                </button>
+                            </div>
+                        ` : ''}
                     </div>
                 </div>
             `).join('');
         }
 
-        function loadGlobalNotifications() {
-            const notifications = JSON.parse(localStorage.getItem('horting_global_notifications') || '[]');
+        function loadGlobalNotificationsForTeam() {
+            const allNotifications = JSON.parse(localStorage.getItem('horting_global_notifications') || '[]');
             const container = document.getElementById('globalNotificationsTeam');
-            const recent = notifications.slice(-3).reverse();
+            
+            // Фильтруем уведомления для этой команды
+            const teamNotifications = allNotifications.filter(notif => 
+                !notif.targetTeams || notif.targetTeams.includes(currentUser.teamId.toString())
+            );
+            
+            const recent = teamNotifications.slice(-3).reverse();
             
             if (!recent.length) {
                 container.innerHTML = '<p>Немає загальних сповіщень</p>';
@@ -299,9 +335,9 @@
             }
             
             container.innerHTML = recent.map(notif => `
-                <div class="notification-item">
-                    <strong>${notif.title}</strong>
-                    <p>${notif.message}</p>
+                <div class="enhanced-card" style="border-left-color: #ffd60a;">
+                    <strong style="color: #ffd60a; font-size: 1.1rem;">${notif.title}</strong>
+                    <p style="margin: 10px 0;">${notif.message}</p>
                     <div class="notification-date">
                         ${formatDate(notif.date)} • ${notif.author}
                     </div>
@@ -319,16 +355,30 @@
             }
             
             container.innerHTML = tasks.map(task => `
-                <div class="notification-item" style="border-left-color: ${task.completed ? '#1a936f' : '#ff9e00'}">
-                    <strong>${task.title}</strong>
-                    <p>${task.description}</p>
-                    <div class="notification-date">
-                        ${formatDate(task.date)}
+                <div class="enhanced-card" style="border-left-color: ${task.completed ? '#1a936f' : '#ff9e00'}">
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <div style="flex: 1;">
+                            <strong style="color: ${task.completed ? '#1a936f' : '#ffd60a'}; font-size: 1.1rem;">
+                                ${task.title}
+                            </strong>
+                            <p style="margin: 10px 0;">${task.description}</p>
+                            <div class="notification-date">
+                                ${formatDate(task.date)}
+                            </div>
+                        </div>
                         ${canEdit ? `
-                            <button onclick="toggleTask('${task.id}')" style="margin-left: 10px; background: ${task.completed ? '#ff9e00' : '#1a936f'}; padding: 2px 8px; font-size: 0.8rem;">
-                                ${task.completed ? 'Відновити' : 'Виконано'}
-                            </button>
-                            <button onclick="deleteTask('${task.id}')" style="margin-left: 5px; background: #ff6b6b; padding: 2px 8px; font-size: 0.8rem;">Видалити</button>
+                            <div style="display: flex; flex-direction: column; gap: 5px;">
+                                <button onclick="toggleTask('${task.id}')" 
+                                        class="enhanced-btn ${task.completed ? 'secondary' : ''}" 
+                                        style="padding: 6px 12px; font-size: 0.8rem; white-space: nowrap;">
+                                    ${task.completed ? 'Відновити' : 'Виконано'}
+                                </button>
+                                <button onclick="deleteTask('${task.id}')" 
+                                        class="enhanced-btn danger" 
+                                        style="padding: 6px 12px; font-size: 0.8rem;">
+                                    Видалити
+                                </button>
+                            </div>
                         ` : ''}
                     </div>
                 </div>
@@ -345,11 +395,22 @@
             }
             
             container.innerHTML = absences.map(abs => `
-                <div class="absence-item">
-                    <strong>${abs.memberName}</strong> не буде ${abs.date}<br>
-                    <small>Причина: ${abs.reason}</small>
-                    <div class="notification-date">
-                        ${canEdit ? `<button onclick="deleteAbsence('${abs.id}')" style="margin-left: 10px; background: #ff6b6b; padding: 2px 8px; font-size: 0.8rem;">Видалити</button>` : ''}
+                <div class="enhanced-card" style="border-left-color: #ff6b6b;">
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <div style="flex: 1;">
+                            <strong style="color: #ff6b6b; font-size: 1.1rem;">${abs.memberName}</strong>
+                            <p style="margin: 5px 0;">Не буде: ${abs.date}</p>
+                            <small style="color: #adb5bd;">Причина: ${abs.reason}</small>
+                        </div>
+                        ${canEdit ? `
+                            <div>
+                                <button onclick="deleteAbsence('${abs.id}')" 
+                                        class="enhanced-btn danger" 
+                                        style="padding: 6px 12px; font-size: 0.8rem;">
+                                    Видалити
+                                </button>
+                            </div>
+                        ` : ''}
                     </div>
                 </div>
             `).join('');
@@ -368,12 +429,17 @@
             }
             
             container.innerHTML = myMessages.reverse().map(msg => `
-                <div class="notification-item" style="border-left-color: #9d4edd;">
-                    <strong>${msg.message.split(']')[0]}]</strong>
-                    <p>${msg.message.split('] ')[1] || msg.message}</p>
+                <div class="enhanced-card" style="border-left-color: #9d4edd;">
+                    <strong style="color: #9d4edd; font-size: 1.1rem;">
+                        ${msg.message.split(']')[0]}]
+                    </strong>
+                    <p style="margin: 10px 0;">${msg.message.split('] ')[1] || msg.message}</p>
                     <div class="notification-date">
                         ${formatDate(msg.date)}
-                        ${msg.read ? '<span style="color: #1a936f;">✓ Прочитано</span>' : '<span style="color: #ff9e00;">Очікує розгляду</span>'}
+                        ${msg.read ? 
+                            '<span style="color: #1a936f;">✓ Прочитано адміністратором</span>' : 
+                            '<span style="color: #ff9e00;">● Очікує розгляду</span>'
+                        }
                     </div>
                 </div>
             `).join('');
@@ -389,18 +455,23 @@
             }
             
             container.innerHTML = trainings.map(training => `
-                <div class="notification-item" style="border-left-color: #00bbf9;">
-                    <strong>${training.day.charAt(0).toUpperCase() + training.day.slice(1)}</strong>
-                    <p>Дата: ${training.date}</p>
+                <div class="enhanced-card" style="border-left-color: #00bbf9;">
+                    <strong style="color: #00bbf9; font-size: 1.1rem;">
+                        ${training.day.charAt(0).toUpperCase() + training.day.slice(1)}
+                    </strong>
+                    <p style="margin: 10px 0;">Дата: ${training.date}</p>
                     <div class="notification-date">
-                        ${training.isToday ? '<span style="color: #ffd60a;">● Сьогодні</span>' : ''}
+                        ${training.isToday ? 
+                            '<span style="color: #ffd60a; font-weight: bold;">● Сьогодні</span>' : 
+                            ''
+                        }
                     </div>
                 </div>
             `).join('');
         }
 
         // Отправка сообщения админу
-        function sendAdminMessage() {
+        async function sendAdminMessage() {
             const message = document.getElementById('adminMessage').value.trim();
             const type = document.getElementById('messageType').value;
             
@@ -429,33 +500,56 @@
             loadTeamData();
         }
 
-        function showAddMemberForm() {
+        // Показать форму добавления участника
+        async function showAddMemberForm() {
             if (!canEdit) return;
             
-            const name = prompt('Повне ім\'я:');
-            if (!name) return;
+            const result = await Modal.showForm('Додати члена команди', [
+                {
+                    label: 'Повне ім\'я',
+                    name: 'name',
+                    type: 'text',
+                    placeholder: 'Іван Іванов',
+                    required: true
+                },
+                {
+                    label: 'Позивний',
+                    name: 'callSign',
+                    type: 'text',
+                    placeholder: 'Вовк',
+                    required: true
+                },
+                {
+                    label: 'Звання',
+                    name: 'rank',
+                    type: 'text',
+                    placeholder: 'Сержант',
+                    required: true
+                },
+                {
+                    label: 'Роль',
+                    name: 'role',
+                    type: 'select',
+                    options: [
+                        { value: 'soldier', text: 'Боець' },
+                        { value: 'deputy', text: 'Заступник командира' },
+                        { value: 'command', text: 'Командир' }
+                    ],
+                    required: true
+                }
+            ]);
             
-            const callSign = prompt('Позивний:');
-            if (!callSign) return;
-            
-            const rank = prompt('Звання:');
-            if (!rank) return;
-            
-            const role = prompt('Роль (command/ deputy/ soldier):');
-            if (!['command', 'deputy', 'soldier'].includes(role)) {
-                alert('Невірна роль. Використовуйте: command, deputy або soldier');
-                return;
+            if (result) {
+                TeamManager.addMember(currentUser.teamId, {
+                    name: result.name,
+                    callSign: result.callSign,
+                    rank: result.rank,
+                    role: result.role
+                });
+                
+                loadTeamData();
+                alert('Члена команди успішно додано!');
             }
-            
-            TeamManager.addMember(currentUser.teamId, {
-                name: name,
-                callSign: callSign,
-                rank: rank,
-                role: role
-            });
-            
-            loadTeamData();
-            alert('Члена команди додано!');
         }
 
         function removeMember(memberId) {
@@ -465,23 +559,42 @@
             loadTeamData();
         }
 
-        function showAddNotificationForm() {
+        // Показать форму добавления уведомления
+        async function showAddNotificationForm() {
             if (!canEdit) return;
             
-            const title = prompt('Заголовок сповіщення:');
-            if (!title) return;
+            const result = await Modal.showForm('Додати сповіщення', [
+                {
+                    label: 'Заголовок',
+                    name: 'title',
+                    type: 'text',
+                    placeholder: 'Важлива інформація',
+                    required: true
+                },
+                {
+                    label: 'Текст сповіщення',
+                    name: 'message',
+                    type: 'textarea',
+                    placeholder: 'Текст вашого сповіщення...',
+                    rows: 4,
+                    required: true
+                }
+            ]);
             
-            const message = prompt('Текст сповіщення:');
-            if (!message) return;
-            
-            TeamManager.addTeamNotification(
-                currentUser.teamId, 
-                { title: title, message: message },
-                currentUser.isCommander ? 'Командир' : 'Заступник'
-            );
-            
-            loadTeamData();
-            alert('Сповіщення додано!');
+            if (result) {
+                TeamManager.addTeamNotification(
+                    currentUser.teamId, 
+                    { 
+                        title: result.title, 
+                        message: result.message 
+                    },
+                    currentUser.isCommander ? 'Командир' : 
+                    currentUser.isDeputy ? 'Заступник' : 'Адміністратор'
+                );
+                
+                loadTeamData();
+                alert('Сповіщення успішно додано!');
+            }
         }
 
         function deleteNotification(notificationId) {
@@ -492,22 +605,37 @@
             loadTeamData();
         }
 
-        function showAddTaskForm() {
+        // Показать форму добавления задачи
+        async function showAddTaskForm() {
             if (!canEdit) return;
             
-            const title = prompt('Назва завдання:');
-            if (!title) return;
+            const result = await Modal.showForm('Додати завдання', [
+                {
+                    label: 'Назва завдання',
+                    name: 'title',
+                    type: 'text',
+                    placeholder: 'Назва завдання',
+                    required: true
+                },
+                {
+                    label: 'Опис завдання',
+                    name: 'description',
+                    type: 'textarea',
+                    placeholder: 'Детальний опис завдання...',
+                    rows: 3,
+                    required: true
+                }
+            ]);
             
-            const description = prompt('Опис завдання:');
-            if (!description) return;
-            
-            TeamManager.addTask(currentUser.teamId, {
-                title: title,
-                description: description
-            });
-            
-            loadTeamData();
-            alert('Завдання додано!');
+            if (result) {
+                TeamManager.addTask(currentUser.teamId, {
+                    title: result.title,
+                    description: result.description
+                });
+                
+                loadTeamData();
+                alert('Завдання успішно додано!');
+            }
         }
 
         function toggleTask(taskId) {
@@ -529,7 +657,7 @@
             loadTasks();
         }
 
-        function reportAbsence() {
+        async function reportAbsence() {
             const name = document.getElementById('absenceName').value.trim();
             const date = document.getElementById('absenceDate').value;
             const reason = document.getElementById('absenceReason').value;
@@ -550,7 +678,19 @@
             if (isTrainingDay(dateObj)) {
                 const dayNames = ['неділя', 'понеділок', 'вівторок', 'середа', 'четвер', 'п\'ятниця', 'субота'];
                 const dayName = dayNames[dateObj.getDay()];
-                if (!confirm(`Увага! ${date} - це день заняття (${dayName}). Все одно відправити?`)) {
+                
+                const confirmMsg = await Modal.show(
+                    'Підтвердження',
+                    `<p><strong>Увага!</strong></p>
+                     <p>${date} - це день заняття (${dayName}).</p>
+                     <p>Все одно відправити повідомлення про відсутність?</p>`,
+                    [
+                        { text: 'Скасувати', class: 'secondary', value: 'cancel' },
+                        { text: 'Відправити', class: '', value: 'send' }
+                    ]
+                );
+                
+                if (confirmMsg !== 'send') {
                     return;
                 }
             }
@@ -584,7 +724,13 @@
             
             loadTeamData();
             loadMyMessages();
-            alert('Повідомлення відправлено! Воно буде автоматично видалено ' + date + ' о 23:59');
+            
+            Modal.show(
+                'Успішно!',
+                `<p>Повідомлення відправлено!</p>
+                 <p>Воно буде автоматично видалено ${date} о 23:59.</p>`,
+                [{ text: 'OK', class: '', value: 'ok' }]
+            );
         }
 
         function deleteAbsence(absenceId) {
