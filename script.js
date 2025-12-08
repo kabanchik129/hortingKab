@@ -105,31 +105,10 @@ function initializeDatabase() {
     return defaultDB;
 }
 
-function loadDatabase() {
-    const saved = localStorage.getItem('horting_database');
-    if (!saved) return initializeDatabase();
-    
-    try {
-        return JSON.parse(saved);
-    } catch (e) {
-        console.error('Помилка завантаження:', e);
-        return initializeDatabase();
-    }
-}
-
-function saveDatabase() {
-    try {
-        database.lastUpdated = new Date().toISOString();
-        localStorage.setItem('horting_database', JSON.stringify(database));
-    } catch (e) {
-        console.error('Помилка збереження:', e);
-    }
-}
-
 // ============= ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ =============
 
 let currentUser = null;
-let database = loadDatabase();
+let database = null;
 let editMembersCache = [];
 
 // ============= СИНХРОНИЗАЦИЯ =============
@@ -139,9 +118,93 @@ let githubToken = localStorage.getItem('github_token') || '';
 let gistId = localStorage.getItem('horting_gist_id') || '';
 let lastSync = localStorage.getItem('last_sync') || 'Немає';
 
+// ============= ЗАГРУЗКА И СОХРАНЕНИЕ ДАННЫХ =============
+
+async function loadDatabase() {
+    // Загружаем локальные данные
+    const saved = localStorage.getItem('horting_database');
+    let localDB = initializeDatabase();
+    
+    if (saved) {
+        try {
+            localDB = JSON.parse(saved);
+        } catch (e) {
+            console.error('Помилка завантаження з localStorage:', e);
+        }
+    }
+    
+    // Если есть доступ к GitHub, пытаемся загрузить оттуда
+    if (githubToken && gistId) {
+        try {
+            console.log('Спроба завантажити дані з GitHub...');
+            const githubData = await loadFromGitHubSilent();
+            if (githubData) {
+                // Проверяем какая база новее
+                const localDate = new Date(localDB.lastUpdated || 0);
+                const githubDate = new Date(githubData.lastUpdated || 0);
+                
+                if (githubDate > localDate) {
+                    console.log('Дані з GitHub новіші, використовую їх');
+                    // Объединяем настройки
+                    githubData.settings = { ...localDB.settings, ...githubData.settings };
+                    saveDatabaseLocally(githubData);
+                    return githubData;
+                } else {
+                    console.log('Локальні дані новіші або такі ж самі');
+                }
+            }
+        } catch (error) {
+            console.log('Не вдалося завантажити з GitHub:', error.message);
+        }
+    }
+    
+    return localDB;
+}
+
+async function loadFromGitHubSilent() {
+    if (!githubToken || !gistId) return null;
+    
+    try {
+        const response = await fetch(`${GITHUB_API}/gists/${gistId}`, {
+            headers: {
+                'Authorization': `token ${githubToken}`,
+                'Accept': 'application/vnd.github.v3+json'
+            }
+        });
+        
+        if (!response.ok) throw new Error('Помилка завантаження');
+        
+        const result = await response.json();
+        const fileName = Object.keys(result.files)[0];
+        const content = result.files[fileName].content;
+        
+        return JSON.parse(content);
+    } catch (error) {
+        console.error('Помилка завантаження з GitHub:', error);
+        return null;
+    }
+}
+
+function saveDatabaseLocally(db = database) {
+    try {
+        db.lastUpdated = new Date().toISOString();
+        localStorage.setItem('horting_database', JSON.stringify(db));
+        database = db;
+    } catch (e) {
+        console.error('Помилка збереження в localStorage:', e);
+    }
+}
+
+function saveDatabase() {
+    saveDatabaseLocally();
+}
+
+// ============= ОБНОВЛЕНИЕ СТАТУСА СИНХРОНИЗАЦИИ =============
+
 function updateSyncStatus() {
     const statusElement = document.getElementById('sync-status-text');
     const lastSyncElement = document.getElementById('last-sync');
+    const gistIdElement = document.getElementById('current-gist-id');
     
     if (githubToken && gistId) {
         statusElement.textContent = 'Синхронізовано з GitHub';
@@ -155,16 +218,28 @@ function updateSyncStatus() {
     }
     
     lastSyncElement.textContent = lastSync;
+    gistIdElement.textContent = gistId || 'Не вказано';
 }
+
+// ============= СИНХРОНИЗАЦИЯ С GITHUB =============
 
 async function saveToGitHub() {
     const token = document.getElementById('github-token').value.trim() || githubToken;
-    const gistName = document.getElementById('gist-name').value.trim() || 'horting-data';
+    const gistName = 'horting-data';
+    const inputGistId = document.getElementById('gist-id').value.trim();
     
     if (!token) {
         alert('Будь ласка, введіть GitHub токен');
         return;
     }
+    
+    if (inputGistId) {
+        gistId = inputGistId;
+        localStorage.setItem('horting_gist_id', gistId);
+    }
+    
+    // Обновляем время последнего изменения
+    database.lastUpdated = new Date().toISOString();
     
     const data = {
         files: {
@@ -172,7 +247,7 @@ async function saveToGitHub() {
                 content: JSON.stringify(database, null, 2)
             }
         },
-        description: 'Хортинг - дані гуртка',
+        description: 'Хортинг - дані гуртка | Оновлено: ' + new Date().toLocaleString('uk-UA'),
         public: false
     };
     
@@ -184,12 +259,16 @@ async function saveToGitHub() {
             method: method,
             headers: {
                 'Authorization': `token ${token}`,
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Accept': 'application/vnd.github.v3+json'
             },
             body: JSON.stringify(data)
         });
         
-        if (!response.ok) throw new Error('Помилка запиту');
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Помилка запиту');
+        }
         
         const result = await response.json();
         gistId = result.id;
@@ -198,35 +277,46 @@ async function saveToGitHub() {
         localStorage.setItem('github_token', token);
         localStorage.setItem('horting_gist_id', gistId);
         localStorage.setItem('last_sync', new Date().toLocaleString('uk-UA'));
+        lastSync = localStorage.getItem('last_sync');
+        
+        // Сохраняем также локально
+        saveDatabase();
         
         updateSyncStatus();
-        showNotification('Дані збережено на GitHub!');
+        showNotification('Дані успішно збережено на GitHub!');
+        hideSyncModal();
     } catch (error) {
+        console.error('Помилка збереження:', error);
         alert('Помилка збереження на GitHub: ' + error.message);
     }
 }
 
 async function loadFromGitHub() {
     const token = document.getElementById('github-token').value.trim() || githubToken;
+    const inputGistId = document.getElementById('gist-id').value.trim() || gistId;
     
     if (!token) {
-        alert('Введіть GitHub токен');
+        alert('Будь ласка, введіть GitHub токен');
         return;
     }
     
-    if (!gistId) {
-        alert('Спочатку збережіть дані на GitHub');
+    if (!inputGistId) {
+        alert('Введіть Gist ID для завантаження даних');
         return;
     }
     
     try {
-        const response = await fetch(`${GITHUB_API}/gists/${gistId}`, {
+        const response = await fetch(`${GITHUB_API}/gists/${inputGistId}`, {
             headers: {
-                'Authorization': `token ${token}`
+                'Authorization': `token ${token}`,
+                'Accept': 'application/vnd.github.v3+json'
             }
         });
         
-        if (!response.ok) throw new Error('Помилка завантаження');
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Помилка завантаження');
+        }
         
         const result = await response.json();
         const fileName = Object.keys(result.files)[0];
@@ -234,21 +324,71 @@ async function loadFromGitHub() {
         
         const importedData = JSON.parse(content);
         
-        if (confirm('Це перезапише поточні дані. Продовжити?')) {
+        if (confirm('Це завантажить дані з GitHub і перезапише локальні. Продовжити?')) {
             database = importedData;
-            saveDatabase();
-            localStorage.setItem('last_sync', new Date().toLocaleString('uk-UA'));
+            gistId = inputGistId;
+            githubToken = token;
             
+            localStorage.setItem('github_token', token);
+            localStorage.setItem('horting_gist_id', gistId);
+            localStorage.setItem('last_sync', new Date().toLocaleString('uk-UA'));
+            lastSync = localStorage.getItem('last_sync');
+            
+            saveDatabase();
             updateSyncStatus();
-            showNotification('Дані завантажено з GitHub!');
+            showNotification('Дані успішно завантажено з GitHub!');
             
             if (currentUser) {
                 loadData();
             }
+            
+            hideSyncModal();
         }
     } catch (error) {
-        alert('Помилка завантаження: ' + error.message);
+        console.error('Помилка завантаження:', error);
+        alert('Помилка завантаження з GitHub: ' + error.message);
     }
+}
+
+function copySettings() {
+    const settings = {
+        token: githubToken,
+        gistId: gistId,
+        lastSync: lastSync
+    };
+    
+    const settingsString = JSON.stringify(settings, null, 2);
+    
+    navigator.clipboard.writeText(settingsString).then(() => {
+        showNotification('Налаштування скопійовано в буфер обміну!');
+    }).catch(() => {
+        const textArea = document.createElement('textarea');
+        textArea.value = settingsString;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        showNotification('Налаштування скопійовано!');
+    });
+}
+
+function pasteSettings() {
+    navigator.clipboard.readText().then(text => {
+        try {
+            const settings = JSON.parse(text);
+            if (settings.token && settings.gistId) {
+                document.getElementById('github-token').value = settings.token;
+                document.getElementById('gist-id').value = settings.gistId;
+                showNotification('Налаштування вставлено!');
+            } else {
+                alert('Невірний формат налаштувань');
+            }
+        } catch (e) {
+            alert('Невірний формат даних в буфері обміну');
+        }
+    }).catch(() => {
+        prompt('Вставте налаштування вручну (формат JSON з полями token та gistId)');
+    });
 }
 
 function exportLocalData() {
@@ -298,7 +438,7 @@ function importLocalData() {
 
 function showSyncModal() {
     document.getElementById('github-token').value = githubToken;
-    document.getElementById('gist-name').value = 'horting-data';
+    document.getElementById('gist-id').value = gistId;
     updateSyncStatus();
     document.getElementById('sync-modal').classList.remove('hidden');
 }
@@ -309,7 +449,7 @@ function hideSyncModal() {
 
 // ============= ОСНОВНЫЕ ФУНКЦИИ =============
 
-function login() {
+async function login() {
     const passwordInput = document.getElementById('password');
     const password = passwordInput.value;
     const errorElement = document.getElementById('login-error');
@@ -324,16 +464,34 @@ function login() {
         return;
     }
     
-    currentUser = userInfo;
-    passwordInput.value = '';
-    errorElement.classList.add('hidden');
+    // Показываем сообщение о загрузке
+    const loginBtn = document.querySelector('.btn-login');
+    const originalText = loginBtn.innerHTML;
+    loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Завантаження...';
+    loginBtn.disabled = true;
     
-    document.getElementById('login-screen').classList.remove('active');
-    document.getElementById('main-screen').classList.add('active');
-    
-    setupInterface();
-    loadData();
-    showNotification(`Вітаємо, ${userInfo.displayName}!`);
+    try {
+        // Загружаем базу данных (теперь асинхронно)
+        database = await loadDatabase();
+        
+        currentUser = userInfo;
+        passwordInput.value = '';
+        errorElement.classList.add('hidden');
+        
+        document.getElementById('login-screen').classList.remove('active');
+        document.getElementById('main-screen').classList.add('active');
+        
+        setupInterface();
+        loadData();
+        showNotification(`Вітаємо, ${userInfo.displayName}!`);
+    } catch (error) {
+        console.error('Помилка завантаження:', error);
+        showNotification('Помилка завантаження даних');
+    } finally {
+        // Восстанавливаем кнопку
+        loginBtn.innerHTML = originalText;
+        loginBtn.disabled = false;
+    }
 }
 
 function logout() {
@@ -1113,7 +1271,7 @@ function showNotification(message) {
 // ============= АВТООЧИСТКА =============
 
 function checkAutoCleanup() {
-    if (!database.settings.autoCleanup) return;
+    if (!database || !database.settings.autoCleanup) return;
     
     const now = new Date();
     const [hours, minutes] = (database.settings.cleanupTime || '23:59').split(':').map(Number);
@@ -1160,6 +1318,40 @@ function performCleanup() {
     }
 }
 
+// ============= АВТОСИНХРОНИЗАЦИЯ =============
+
+async function autoSyncOnLoad() {
+    if (!githubToken || !gistId) return;
+    
+    try {
+        console.log('Автосинхронізація...');
+        const githubData = await loadFromGitHubSilent();
+        
+        if (githubData && database) {
+            const localDate = new Date(database.lastUpdated || 0);
+            const githubDate = new Date(githubData.lastUpdated || 0);
+            
+            if (githubDate > localDate) {
+                console.log('Знайдено новіші дані на GitHub');
+                // Показываем уведомление о новых данных
+                setTimeout(() => {
+                    if (confirm('На сервері є новіші дані. Завантажити?')) {
+                        database = githubData;
+                        saveDatabase();
+                        showNotification('Дані оновлено з GitHub');
+                        
+                        if (currentUser) {
+                            loadData();
+                        }
+                    }
+                }, 1000);
+            }
+        }
+    } catch (error) {
+        console.log('Автосинхронізація не вдалась:', error.message);
+    }
+}
+
 // ============= ИНИЦИАЛИЗАЦИЯ =============
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -1187,6 +1379,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
+    // Инициализируем базу данных при загрузке
+    loadDatabase().then(db => {
+        database = db;
+        console.log('База даних завантажена');
+    }).catch(error => {
+        console.error('Помилка ініціалізації:', error);
+        database = initializeDatabase();
+    });
+    
     updateSyncStatus();
     setInterval(checkAutoCleanup, 60000);
+    
+    // Автосинхронизация через 2 секунды после загрузки
+    setTimeout(autoSyncOnLoad, 2000);
 });

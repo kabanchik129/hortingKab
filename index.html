@@ -399,8 +399,9 @@
                             <small>Створіть токен на GitHub з правами gist</small>
                         </div>
                         <div class="form-group">
-                            <label>Назва Gist:</label>
-                            <input type="text" id="gist-name" value="horting-data">
+                            <label>Gist ID (не обов'язково):</label>
+                            <input type="text" id="gist-id" placeholder="aa1bb2cc3dd4ee5ff6">
+                            <small>Якщо вже є - введіть для завантаження існуючих даних</small>
                         </div>
                         <div class="sync-buttons">
                             <button onclick="saveToGitHub()" class="btn-primary">
@@ -423,11 +424,27 @@
                             </button>
                         </div>
                     </div>
+                    
+                    <div class="sync-option">
+                        <h4><i class="fas fa-share-alt"></i> Спільна робота</h4>
+                        <div class="form-group">
+                            <label>Поділитися налаштуваннями:</label>
+                            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                                <button onclick="copySettings()" class="btn-secondary">
+                                    <i class="fas fa-copy"></i> Копіювати налаштування
+                                </button>
+                                <button onclick="pasteSettings()" class="btn-secondary">
+                                    <i class="fas fa-paste"></i> Вставити налаштування
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="sync-status" id="sync-status">
                     <p><i class="fas fa-info-circle"></i> Статус: <span id="sync-status-text">Локальне зберігання</span></p>
                     <p>Остання синхронізація: <span id="last-sync">Немає</span></p>
+                    <p>Gist ID: <span id="current-gist-id">Не вказано</span></p>
                 </div>
             </div>
             <div class="modal-footer">
