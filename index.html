@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Хортинг - Військовий гурток</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Заставка входа -->
+        <div id="login-screen" class="login-screen">
+            <div class="logo-container">
+                <div class="logo">
+                    <i class="fas fa-shield-alt"></i>
+                    <h1>ХОРТИНГ</h1>
+                </div>
+                <p class="subtitle">Військово-патріотичний гурток</p>
+            </div>
+
+            <div class="password-form">
+                <h2>Вхід до системи</h2>
+                <p class="instruction">Формат пароля: <br><code>mal[1-3]kab[цифри]</code> або <code>..._kam</code>/<code>..._zam</code></p>
+                
+                <div class="input-group">
+                    <input type="password" id="password-input" placeholder="Введіть пароль команди" autocomplete="off">
+                    <button id="login-btn" onclick="checkPassword()">
+                        <i class="fas fa-sign-in-alt"></i> Увійти
+                    </button>
+                </div>
+                
+                <div id="error-message" class="error-message"></div>
+                
+                <div class="password-examples">
+                    <h3>Приклади паролів:</h3>
+                    <ul>
+                        <li><strong>Перегляд:</strong> mal1kab101, mal2kab205, mal3kab777</li>
+                        <li><strong>Редагування:</strong> mal1kab101_kam, mal2kab205_zam</li>
+                    </ul>
+                    <p class="hint">mal1 - Старша команда 1, mal2 - Старша 2, mal3 - Розвідка</p>
+                </div>
+            </div>
+
+            <footer class="login-footer">
+                <p>© 2024 Військовий гурток "Хортинг". Усі права захищені.</p>
+                <p>Система конфіденційності активована</p>
+            </footer>
+        </div>
+
+        <!-- Основной контент (скрыт до входа) -->
+        <div id="main-content" class="main-content hidden">
+            <!-- Шапка с навигацией -->
+            <header class="content-header">
+                <div class="header-left">
+                    <div class="header-logo">
+                        <i class="fas fa-crosshairs"></i>
+                        <span>ХОРТИНГ</span>
+                    </div>
+                    <div class="team-info">
+                        <h2 id="team-name">Команда</h2>
+                        <p id="user-access-level">Рівень доступу: Перегляд</p>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <button class="btn-logout" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i> Вийти
+                    </button>
+                </div>
+            </header>
+
+            <!-- Основная сетка -->
+            <main class="dashboard">
+                <!-- Левая колонка: Участники -->
+                <section class="card members-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-users"></i> Склад команди</h3>
+                        <span class="badge" id="members-count">0</span>
+                    </div>
+                    <div class="card-content">
+                        <div class="table-container">
+                            <table class="members-table">
+                                <thead>
+                                    <tr>
+                                        <th>Позивний</th>
+                                        <th>Ім'я</th>
+                                        <th>Роль</th>
+                                        <th>Звання</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="members-list">
+                                    <!-- Список заполняется JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Правая колонка: Объявления и задачи -->
+                <div class="right-column">
+                    <!-- Объявления -->
+                    <section class="card announcements-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-bullhorn"></i> Оголошення</h3>
+                            <button id="edit-announcements-btn" class="btn-edit hidden" onclick="toggleEdit('announcements')">
+                                <i class="fas fa-edit"></i> Редагувати
+                            </button>
+                        </div>
+                        <div class="card-content">
+                            <div id="announcements-view">
+                                <ul id="announcements-list">
+                                    <!-- Объявления загружаются из JSON -->
+                                </ul>
+                            </div>
+                            <div id="announcements-edit" class="edit-mode hidden">
+                                <textarea id="announcements-textarea" rows="6" placeholder="Введіть оголошення, кожне з нового рядка..."></textarea>
+                                <div class="edit-buttons">
+                                    <button class="btn-save" onclick="saveData('announcements')">
+                                        <i class="fas fa-save"></i> Зберегти
+                                    </button>
+                                    <button class="btn-cancel" onclick="toggleEdit('announcements')">
+                                        <i class="fas fa-times"></i> Скасувати
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <small>Останнє оновлення: <span id="announcements-date">-</span></small>
+                        </div>
+                    </section>
+
+                    <!-- Задачи -->
+                    <section class="card tasks-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-tasks"></i> Завдання</h3>
+                            <button id="edit-tasks-btn" class="btn-edit hidden" onclick="toggleEdit('tasks')">
+                                <i class="fas fa-edit"></i> Редагувати
+                            </button>
+                        </div>
+                        <div class="card-content">
+                            <div id="tasks-view">
+                                <ul id="tasks-list">
+                                    <!-- Задачи загружаются из JSON -->
+                                </ul>
+                            </div>
+                            <div id="tasks-edit" class="edit-mode hidden">
+                                <textarea id="tasks-textarea" rows="6" placeholder="Введіть завдання, кожне з нового рядка..."></textarea>
+                                <div class="edit-buttons">
+                                    <button class="btn-save" onclick="saveData('tasks')">
+                                        <i class="fas fa-save"></i> Зберегти
+                                    </button>
+                                    <button class="btn-cancel" onclick="toggleEdit('tasks')">
+                                        <i class="fas fa-times"></i> Скасувати
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <small>Останнє оновлення: <span id="tasks-date">-</span></small>
+                        </div>
+                    </section>
+                </div>
+            </main>
+
+            <footer class="content-footer">
+                <p>Система управління командою | Статус: <span class="status-active">АКТИВНИЙ</span></p>
+                <p>© Хортинг 2024 | Конфіденційно</p>
+            </footer>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
