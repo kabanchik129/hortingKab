@@ -12,7 +12,7 @@
 </head>
 <body>
     <div class="container">
-        <!-- Заставка входа -->
+        <!-- Экран входа -->
         <div id="login-screen" class="login-screen">
             <div class="logo-container">
                 <div class="logo">
@@ -20,14 +20,21 @@
                     <h1>ХОРТИНГ</h1>
                 </div>
                 <p class="subtitle">Військово-патріотичний гурток</p>
+                <p class="year">2025</p>
             </div>
 
             <div class="password-form">
                 <h2>Вхід до системи</h2>
-                <p class="instruction">Формат пароля: <br><code>mal[1-3]kab[цифри]</code> або <code>..._kam</code>/<code>..._zam</code></p>
+                
+                <div class="access-levels">
+                    <div class="access-badge junior">Молодші групи</div>
+                    <div class="access-badge senior">Старші групи</div>
+                    <div class="access-badge admin">Адміністратор</div>
+                    <div class="access-badge parents">Батьки</div>
+                </div>
                 
                 <div class="input-group">
-                    <input type="password" id="password-input" placeholder="Введіть пароль команди" autocomplete="off">
+                    <input type="password" id="password-input" placeholder="Введіть пароль доступу" autocomplete="off" autofocus>
                     <button id="login-btn" onclick="checkPassword()">
                         <i class="fas fa-sign-in-alt"></i> Увійти
                     </button>
@@ -35,25 +42,43 @@
                 
                 <div id="error-message" class="error-message"></div>
                 
-                <div class="password-examples">
-                    <h3>Приклади паролів:</h3>
-                    <ul>
-                        <li><strong>Перегляд:</strong> mal1kab101, mal2kab205, mal3kab777</li>
-                        <li><strong>Редагування:</strong> mal1kab101_kam, mal2kab205_zam</li>
-                    </ul>
-                    <p class="hint">mal1 - Старша команда 1, mal2 - Старша 2, mal3 - Розвідка</p>
+                <div class="password-instructions">
+                    <details>
+                        <summary>Формати паролів</summary>
+                        <div class="instructions-grid">
+                            <div class="instruction-group">
+                                <h4><i class="fas fa-user-graduate"></i> Молодші групи</h4>
+                                <p><code>mal1kab747</code> - Група 1 (перегляд)</p>
+                                <p><code>mal1kab747_kam</code> - Командир групи 1</p>
+                                <p><code>mal1kab747_zam</code> - Зам. командира групи 1</p>
+                            </div>
+                            <div class="instruction-group">
+                                <h4><i class="fas fa-user-tie"></i> Старші групи</h4>
+                                <p><code>str1kab023</code> - Група 1 (перегляд)</p>
+                                <p><code>str1kab023_kam</code> - Командир групи 1</p>
+                            </div>
+                            <div class="instruction-group">
+                                <h4><i class="fas fa-crown"></i> Адміністратор</h4>
+                                <p><code>kyk4kab934</code> - Повний доступ</p>
+                            </div>
+                            <div class="instruction-group">
+                                <h4><i class="fas fa-users"></i> Батьки</h4>
+                                <p><code>Rod5kabXXX</code> - Перегляд оголошень</p>
+                            </div>
+                        </div>
+                    </details>
                 </div>
             </div>
 
             <footer class="login-footer">
-                <p>© 2024 Військовий гурток "Хортинг". Усі права захищені.</p>
-                <p>Система конфіденційності активована</p>
+                <p>© 2025 Військовий гурток "Хортинг". Система конфіденційності активована</p>
+                <p class="security-status"><i class="fas fa-lock"></i> Захищено</p>
             </footer>
         </div>
 
-        <!-- Основной контент (скрыт до входа) -->
+        <!-- Основной контент -->
         <div id="main-content" class="main-content hidden">
-            <!-- Шапка с навигацией -->
+            <!-- Шапка -->
             <header class="content-header">
                 <div class="header-left">
                     <div class="header-logo">
@@ -61,52 +86,84 @@
                         <span>ХОРТИНГ</span>
                     </div>
                     <div class="team-info">
-                        <h2 id="team-name">Команда</h2>
-                        <p id="user-access-level">Рівень доступу: Перегляд</p>
+                        <h2 id="team-name">Завантаження...</h2>
+                        <div class="access-info">
+                            <span id="user-access-level" class="access-badge-small"></span>
+                            <span id="user-role" class="role-badge"></span>
+                        </div>
                     </div>
                 </div>
                 <div class="header-right">
+                    <button id="admin-btn" class="btn-admin hidden" onclick="openAdminPanel()">
+                        <i class="fas fa-cog"></i> Адмін-панель
+                    </button>
                     <button class="btn-logout" onclick="logout()">
                         <i class="fas fa-sign-out-alt"></i> Вийти
                     </button>
                 </div>
             </header>
 
-            <!-- Основная сетка -->
+            <!-- Dashboard -->
             <main class="dashboard">
                 <!-- Левая колонка: Участники -->
                 <section class="card members-card">
                     <div class="card-header">
                         <h3><i class="fas fa-users"></i> Склад команди</h3>
-                        <span class="badge" id="members-count">0</span>
+                        <div class="card-actions">
+                            <span class="badge" id="members-count">0</span>
+                            <button id="edit-members-btn" class="btn-edit hidden" onclick="toggleEditMode('members')">
+                                <i class="fas fa-edit"></i> Редагувати
+                            </button>
+                        </div>
                     </div>
                     <div class="card-content">
-                        <div class="table-container">
-                            <table class="members-table">
-                                <thead>
-                                    <tr>
-                                        <th>Позивний</th>
-                                        <th>Ім'я</th>
-                                        <th>Роль</th>
-                                        <th>Звання</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="members-list">
-                                    <!-- Список заполняется JavaScript -->
-                                </tbody>
-                            </table>
+                        <div id="members-view">
+                            <div class="table-container">
+                                <table class="members-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Позивний</th>
+                                            <th>Ім'я</th>
+                                            <th>Роль</th>
+                                            <th>Звання</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="members-list">
+                                        <!-- Заполняется через JS -->
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
+                        <div id="members-edit" class="edit-mode hidden">
+                            <div class="edit-members-container">
+                                <div id="members-edit-list"></div>
+                                <button class="btn-add" onclick="addMemberRow()">
+                                    <i class="fas fa-plus"></i> Додати учасника
+                                </button>
+                            </div>
+                            <div class="edit-buttons">
+                                <button class="btn-save" onclick="saveMembers()">
+                                    <i class="fas fa-save"></i> Зберегти склад
+                                </button>
+                                <button class="btn-cancel" onclick="toggleEditMode('members')">
+                                    <i class="fas fa-times"></i> Скасувати
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <small>Оновлено: <span id="members-date">-</span></small>
                     </div>
                 </section>
 
-                <!-- Правая колонка: Объявления и задачи -->
+                <!-- Правая колонка -->
                 <div class="right-column">
-                    <!-- Объявления -->
+                    <!-- Общие объявления -->
                     <section class="card announcements-card">
                         <div class="card-header">
-                            <h3><i class="fas fa-bullhorn"></i> Оголошення</h3>
-                            <button id="edit-announcements-btn" class="btn-edit hidden" onclick="toggleEdit('announcements')">
-                                <i class="fas fa-edit"></i> Редагувати
+                            <h3><i class="fas fa-bullhorn"></i> Загальні оголошення</h3>
+                            <button id="edit-announcements-btn" class="btn-edit hidden" onclick="toggleEditMode('announcements')">
+                                <i class="fas fa-edit"></i> Додати
                             </button>
                         </div>
                         <div class="card-content">
@@ -116,12 +173,17 @@
                                 </ul>
                             </div>
                             <div id="announcements-edit" class="edit-mode hidden">
-                                <textarea id="announcements-textarea" rows="6" placeholder="Введіть оголошення, кожне з нового рядка..."></textarea>
+                                <div class="add-announcement">
+                                    <textarea id="announcements-textarea" placeholder="Введіть нове оголошення..."></textarea>
+                                    <button class="btn-add-small" onclick="addAnnouncement()">
+                                        <i class="fas fa-plus"></i> Додати
+                                    </button>
+                                </div>
                                 <div class="edit-buttons">
-                                    <button class="btn-save" onclick="saveData('announcements')">
+                                    <button class="btn-save" onclick="saveAnnouncements()">
                                         <i class="fas fa-save"></i> Зберегти
                                     </button>
-                                    <button class="btn-cancel" onclick="toggleEdit('announcements')">
+                                    <button class="btn-cancel" onclick="toggleEditMode('announcements')">
                                         <i class="fas fa-times"></i> Скасувати
                                     </button>
                                 </div>
@@ -132,11 +194,11 @@
                         </div>
                     </section>
 
-                    <!-- Задачи -->
+                    <!-- Задачи команды -->
                     <section class="card tasks-card">
                         <div class="card-header">
-                            <h3><i class="fas fa-tasks"></i> Завдання</h3>
-                            <button id="edit-tasks-btn" class="btn-edit hidden" onclick="toggleEdit('tasks')">
+                            <h3><i class="fas fa-tasks"></i> Завдання команди</h3>
+                            <button id="edit-tasks-btn" class="btn-edit hidden" onclick="toggleEditMode('tasks')">
                                 <i class="fas fa-edit"></i> Редагувати
                             </button>
                         </div>
@@ -147,12 +209,17 @@
                                 </ul>
                             </div>
                             <div id="tasks-edit" class="edit-mode hidden">
-                                <textarea id="tasks-textarea" rows="6" placeholder="Введіть завдання, кожне з нового рядка..."></textarea>
+                                <div class="add-task">
+                                    <textarea id="tasks-textarea" placeholder="Введіть нове завдання..."></textarea>
+                                    <button class="btn-add-small" onclick="addTask()">
+                                        <i class="fas fa-plus"></i> Додати
+                                    </button>
+                                </div>
                                 <div class="edit-buttons">
-                                    <button class="btn-save" onclick="saveData('tasks')">
+                                    <button class="btn-save" onclick="saveTasks()">
                                         <i class="fas fa-save"></i> Зберегти
                                     </button>
-                                    <button class="btn-cancel" onclick="toggleEdit('tasks')">
+                                    <button class="btn-cancel" onclick="toggleEditMode('tasks')">
                                         <i class="fas fa-times"></i> Скасувати
                                     </button>
                                 </div>
@@ -166,9 +233,57 @@
             </main>
 
             <footer class="content-footer">
-                <p>Система управління командою | Статус: <span class="status-active">АКТИВНИЙ</span></p>
-                <p>© Хортинг 2024 | Конфіденційно</p>
+                <p>Система управління гуртком "Хортинг" | <span class="status-active">АКТИВНА</span></p>
+                <p>© 2025 | Всі права захищені</p>
             </footer>
+        </div>
+    </div>
+
+    <!-- Модальное окно админ-панели -->
+    <div id="admin-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-cog"></i> Адміністративна панель</h2>
+                <button class="modal-close" onclick="closeAdminPanel()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="admin-tabs">
+                    <button class="tab-btn active" onclick="openAdminTab('groups')">Усі групи</button>
+                    <button class="tab-btn" onclick="openAdminTab('announcements')">Всі оголошення</button>
+                    <button class="tab-btn" onclick="openAdminTab('backup')">Резервне копіювання</button>
+                </div>
+                
+                <div id="admin-groups-tab" class="admin-tab-content">
+                    <h3>Управління всіма групами</h3>
+                    <div id="all-groups-list" class="groups-grid"></div>
+                </div>
+                
+                <div id="admin-announcements-tab" class="admin-tab-content hidden">
+                    <h3>Всі загальні оголошення</h3>
+                    <div class="admin-announcements-list">
+                        <ul id="all-announcements-list"></ul>
+                        <button class="btn-add" onclick="addGlobalAnnouncement()">
+                            <i class="fas fa-plus"></i> Додати загальне оголошення
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="admin-backup-tab" class="admin-tab-content hidden">
+                    <h3>Резервне копіювання даних</h3>
+                    <div class="backup-actions">
+                        <button class="btn-backup" onclick="exportAllData()">
+                            <i class="fas fa-download"></i> Експортувати всі дані
+                        </button>
+                        <button class="btn-backup" onclick="importData()">
+                            <i class="fas fa-upload"></i> Імпортувати дані
+                        </button>
+                        <button class="btn-backup btn-danger" onclick="resetAllData()">
+                            <i class="fas fa-trash"></i> Скинути всі дані
+                        </button>
+                    </div>
+                    <p class="backup-info">Дата останнього резервного копіювання: <span id="last-backup">Немає</span></p>
+                </div>
+            </div>
         </div>
     </div>
 
