@@ -34,6 +34,7 @@
                         <li>Ком. розвідки (3-я): <code>mal3kab001_kam</code></li>
                         <li>Ком. 4-ї (старші): <code>str4kab888_kam</code></li>
                         <li>Зам. 6-ї: <code>str6kab999_zam</code></li>
+                        <li>Боець 5-ї: <code>str5kab555</code></li>
                     </ul>
                 </div>
             </div>
@@ -45,5 +46,14 @@
     </div>
 
     <script src="script.js"></script>
+    <script>
+        // Привязка событий для страницы входа
+        if (document.getElementById('loginBtn')) {
+            document.getElementById('loginBtn').addEventListener('click', login);
+            document.getElementById('passwordInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') login();
+            });
+        }
+    </script>
 </body>
 </html>

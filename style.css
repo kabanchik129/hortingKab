@@ -263,12 +263,18 @@ footer {
 }
 
 .form-row input,
-.form-row select {
+.form-row select,
+.form-row textarea {
     padding: 12px;
     border: 1px solid #415a77;
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.1);
     color: white;
+}
+
+.form-row textarea {
+    resize: vertical;
+    min-height: 80px;
 }
 
 .notification-item {
@@ -313,6 +319,7 @@ footer {
     display: flex;
     gap: 10px;
     margin-bottom: 30px;
+    flex-wrap: wrap;
 }
 
 .tab-btn {
@@ -320,10 +327,20 @@ footer {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid #415a77;
     color: #adb5bd;
+    white-space: nowrap;
 }
 
 .tab-btn.active {
     background: #ffd60a;
     color: #0d1b2a;
     border-color: #ffd60a;
+}
+
+.view-badge {
+    background: #9d4edd;
+    color: white;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    margin-left: 10px;
 }

@@ -42,7 +42,20 @@
 
             <div id="adminTab" style="display: none;">
                 <div class="section">
-                    <h3>Звернення до адміністратора</h3>
+                    <h3>Звернення до адміністратора
+                        <span id="unreadCount" class="role-badge" style="background: #ff6b6b; margin-left: 10px;"></span>
+                    </h3>
+                    
+                    <div class="form-row" style="margin-bottom: 20px;">
+                        <input type="text" id="filterTeam" placeholder="Фільтр по команді (1-6)" oninput="filterMessages()">
+                        <select id="filterStatus" onchange="filterMessages()">
+                            <option value="all">Всі</option>
+                            <option value="unread">Непрочитані</option>
+                            <option value="read">Прочитані</option>
+                        </select>
+                        <button onclick="markAllAsRead()">Позначити всі як прочитані</button>
+                    </div>
+                    
                     <div id="adminNotifications"></div>
                 </div>
             </div>
@@ -59,7 +72,7 @@
         function loadDashboard() {
             loadTeams();
             loadGlobalNotifications();
-            loadAdminNotifications();
+            filterMessages(); // Загружаем обращения с фильтрами
         }
 
         function loadTeams() {
@@ -77,7 +90,7 @@
                             <br><small>${member.rank}</small>
                         </div>
                         <span class="role-badge ${member.role === 'command' ? 'role-kam' : 
-                                              member.role === 'deputy' ? 'role-zam' : ''}">
+                                                  member.role === 'deputy' ? 'role-zam' : ''}">
                             ${member.role === 'command' ? 'Командир' : 
                              member.role === 'deputy' ? 'Заступник' : 'Боець'}
                         </span>
@@ -103,7 +116,14 @@
                 
                 return `
                     <div class="team-card ${teamConfig.color}">
-                        <h3>${teamConfig.name}</h3>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h3 style="margin: 0;">${teamConfig.name}</h3>
+                            <div>
+                                <button onclick="goToTeam(${teamId})" style="padding: 8px 12px; background: #415a77; font-size: 0.9rem;">
+                                    Перейти
+                                </button>
+                            </div>
+                        </div>
                         <div class="team-members">
                             <h4>Склад (${team.members.length})</h4>
                             ${membersHtml || '<p>Немає членів</p>'}
@@ -125,7 +145,7 @@
             const notifications = JSON.parse(localStorage.getItem('horting_global_notifications') || '[]');
             const container = document.getElementById('globalNotifications');
             
-            container.innerHTML = notifications.map(notif => `
+            container.innerHTML = notifications.reverse().map(notif => `
                 <div class="notification-item">
                     <strong>${notif.title}</strong>
                     <p>${notif.message}</p>
@@ -137,20 +157,109 @@
             `).join('');
         }
 
-        function loadAdminNotifications() {
+        // Фильтрация сообщений
+        function filterMessages() {
+            const teamFilter = document.getElementById('filterTeam').value;
+            const statusFilter = document.getElementById('filterStatus').value;
+            
+            loadAdminNotifications(teamFilter, statusFilter);
+        }
+
+        // Отметить все как прочитанные
+        function markAllAsRead() {
+            if (!confirm('Позначити всі звернення як прочитані?')) return;
+            
             const notifications = JSON.parse(localStorage.getItem('horting_admin_notifications') || '[]');
+            notifications.forEach(notif => {
+                notif.read = true;
+            });
+            
+            localStorage.setItem('horting_admin_notifications', JSON.stringify(notifications));
+            loadAdminNotifications();
+            alert('Всі звернення позначено як прочитані!');
+        }
+
+        // Загрузка обращений с фильтрами
+        function loadAdminNotifications(teamFilter = '', statusFilter = 'all') {
+            let notifications = JSON.parse(localStorage.getItem('horting_admin_notifications') || '[]');
+            
+            // Применяем фильтры
+            if (teamFilter) {
+                notifications = notifications.filter(n => n.fromTeam == teamFilter);
+            }
+            
+            if (statusFilter === 'read') {
+                notifications = notifications.filter(n => n.read);
+            } else if (statusFilter === 'unread') {
+                notifications = notifications.filter(n => !n.read);
+            }
+            
             const container = document.getElementById('adminNotifications');
+            const unreadCount = notifications.filter(n => !n.read).length;
+            
+            // Обновляем счетчик непрочитанных
+            document.getElementById('unreadCount').textContent = `${unreadCount} непрочитаних`;
+            
+            if (!notifications.length) {
+                container.innerHTML = '<p>Немає звернень</p>';
+                return;
+            }
+            
+            // Сортируем по дате (новые сначала)
+            notifications.sort((a, b) => new Date(b.date) - new Date(a.date));
             
             container.innerHTML = notifications.map(notif => `
-                <div class="notification-item">
-                    <strong>Від: ${notif.fromTeam ? 'Команда ' + notif.fromTeam : 'Невідомо'}</strong>
-                    <p>${notif.message}</p>
-                    <div class="notification-date">
-                        ${formatDate(notif.date)}
-                        <button onclick="deleteAdminNotification('${notif.id}')" style="margin-left: 10px; background: #ff6b6b; padding: 2px 8px; font-size: 0.8rem;">Видалити</button>
+                <div class="notification-item" style="border-left-color: ${notif.read ? '#415a77' : '#9d4edd'}; background: ${notif.read ? 'rgba(255,255,255,0.03)' : 'rgba(157, 78, 221, 0.1)'};">
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <div style="flex: 1;">
+                            <strong>${notif.fromTeam ? 'Команда ' + notif.fromTeam + ': ' + CONFIG.teams[notif.fromTeam]?.name : 'Невідома команда'}</strong>
+                            <p style="margin: 8px 0;">${notif.message}</p>
+                            <div class="notification-date">
+                                ${formatDate(notif.date)}
+                                ${notif.read ? '<span style="color: #1a936f; margin-left: 10px;">✓ Прочитано</span>' : 
+                                              '<span style="color: #ff9e00; margin-left: 10px;">● Непрочитано</span>'}
+                            </div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 5px; margin-left: 10px;">
+                            ${!notif.read ? 
+                                `<button onclick="markAsRead('${notif.id}')" style="background: #1a936f; padding: 5px 10px; font-size: 0.8rem; white-space: nowrap;">
+                                    Позначити як прочитане
+                                </button>` : 
+                                `<button onclick="markAsUnread('${notif.id}')" style="background: #ff9e00; padding: 5px 10px; font-size: 0.8rem; white-space: nowrap;">
+                                    Позначити як непрочитане
+                                </button>`
+                            }
+                            <button onclick="deleteAdminNotification('${notif.id}')" style="background: #ff6b6b; padding: 5px 10px; font-size: 0.8rem; white-space: nowrap;">
+                                Видалити
+                            </button>
+                        </div>
                     </div>
                 </div>
             `).join('');
+        }
+
+        // Отметить как прочитанное
+        function markAsRead(id) {
+            const notifications = JSON.parse(localStorage.getItem('horting_admin_notifications') || '[]');
+            const notification = notifications.find(n => n.id === id);
+            
+            if (notification) {
+                notification.read = true;
+                localStorage.setItem('horting_admin_notifications', JSON.stringify(notifications));
+                loadAdminNotifications();
+            }
+        }
+
+        // Отметить как непрочитанное
+        function markAsUnread(id) {
+            const notifications = JSON.parse(localStorage.getItem('horting_admin_notifications') || '[]');
+            const notification = notifications.find(n => n.id === id);
+            
+            if (notification) {
+                notification.read = false;
+                localStorage.setItem('horting_admin_notifications', JSON.stringify(notifications));
+                loadAdminNotifications();
+            }
         }
 
         function addGlobalNotification() {
@@ -185,6 +294,14 @@
             const filtered = notifications.filter(n => n.id !== id);
             localStorage.setItem('horting_admin_notifications', JSON.stringify(filtered));
             loadAdminNotifications();
+        }
+
+        // Функция перехода к команде (для админа)
+        function goToTeam(teamId) {
+            // Создаем временные данные пользователя для просмотра команды
+            sessionStorage.setItem('horting_admin_view', 'true');
+            sessionStorage.setItem('horting_view_team', teamId);
+            window.location.href = `team.html?view=${teamId}`;
         }
 
         function showTab(tabName) {

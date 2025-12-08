@@ -16,17 +16,77 @@ const CONFIG = {
 function initStorage() {
     if (!localStorage.getItem('horting_teams')) {
         const defaultTeams = {};
-        Object.keys(CONFIG.teams).forEach(teamId => {
+        
+        // Создаем 6 команд с тестовыми данными
+        for (let teamId = 1; teamId <= 6; teamId++) {
+            const teamType = teamId <= 3 ? 'mal' : 'str';
+            let teamName = '';
+            
+            if (teamId <= 3) {
+                teamName = `${teamId}-ша команда (молодша)`;
+                if (teamId === 3) teamName = '3-тя команда (розвідка)';
+            } else {
+                teamName = `${teamId}-та команда (старша)`;
+            }
+            
             defaultTeams[teamId] = {
-                members: [],
-                notifications: [],
-                tasks: [],
+                members: [
+                    {
+                        id: '1',
+                        name: 'Командир Командиров',
+                        callSign: 'Командир',
+                        rank: 'Старший сержант',
+                        role: 'command'
+                    },
+                    {
+                        id: '2', 
+                        name: 'Заступник Заступників',
+                        callSign: 'Заступник',
+                        rank: 'Сержант',
+                        role: 'deputy'
+                    }
+                ],
+                notifications: [
+                    {
+                        id: '1',
+                        title: 'Ласкаво просимо!',
+                        message: 'Це ваша командна сторінка. Тут будуть всі сповіщення та завдання.',
+                        date: new Date().toISOString(),
+                        author: 'Система'
+                    }
+                ],
+                tasks: [
+                    {
+                        id: '1',
+                        title: 'Знайомство з системою',
+                        description: 'Ознайомитися з усіма функціями сайту',
+                        date: new Date().toISOString(),
+                        completed: false
+                    }
+                ],
                 absences: []
             };
-        });
+        }
+        
         localStorage.setItem('horting_teams', JSON.stringify(defaultTeams));
-        localStorage.setItem('horting_admin_notifications', JSON.stringify([]));
-        localStorage.setItem('horting_global_notifications', JSON.stringify([]));
+        localStorage.setItem('horting_admin_notifications', JSON.stringify([
+            {
+                id: '1',
+                date: new Date().toISOString(),
+                message: '[ПИТАННЯ] Як додати нового члена команди?',
+                fromTeam: '1',
+                read: false
+            }
+        ]));
+        localStorage.setItem('horting_global_notifications', JSON.stringify([
+            {
+                id: '1',
+                title: 'Початок роботи системи',
+                message: 'Вітаємо у системі Хортинг! Сайт розпочав роботу.',
+                date: new Date().toISOString(),
+                author: 'Адміністратор'
+            }
+        ]));
     }
 }
 
@@ -122,6 +182,77 @@ function formatDate(date) {
         hour: '2-digit',
         minute: '2-digit'
     });
+}
+
+// Функция обращения к админу
+function sendToAdmin(message, fromTeam = null) {
+    const notifications = JSON.parse(localStorage.getItem('horting_admin_notifications') || '[]');
+    
+    const notification = {
+        id: Date.now().toString(),
+        date: new Date().toISOString(),
+        message: message,
+        fromTeam: fromTeam,
+        read: false
+    };
+    
+    notifications.push(notification);
+    localStorage.setItem('horting_admin_notifications', JSON.stringify(notifications));
+    
+    return notification;
+}
+
+// Проверка дней занятий
+function isTrainingDay(date = new Date()) {
+    const dayNames = ['неділя', 'понеділок', 'вівторок', 'середа', 'четвер', 'п\'ятниця', 'субота'];
+    const currentDay = dayNames[date.getDay()];
+    return CONFIG.trainingDays.includes(currentDay);
+}
+
+// Получение ближайших занятий
+function getNextTrainings(count = 3) {
+    const result = [];
+    const today = new Date();
+    const dayNames = ['неділя', 'понеділок', 'вівторок', 'середа', 'четвер', 'п\'ятниця', 'субота'];
+    
+    for (let i = 0; i < 14; i++) { // Проверяем 2 недели вперед
+        const date = new Date(today);
+        date.setDate(today.getDate() + i);
+        const dayName = dayNames[date.getDay()];
+        
+        if (CONFIG.trainingDays.includes(dayName)) {
+            result.push({
+                date: date.toLocaleDateString('uk-UA'),
+                day: dayName,
+                isToday: i === 0
+            });
+            
+            if (result.length >= count) break;
+        }
+    }
+    
+    return result;
+}
+
+// Автоматическое удаление старых уведомлений
+function cleanOldData() {
+    const now = new Date();
+    
+    // Очистка уведомлений об отсутствии
+    const teams = TeamManager.getTeams();
+    Object.keys(teams).forEach(teamId => {
+        teams[teamId].absences = teams[teamId].absences.filter(absence => {
+            const absenceDate = new Date(absence.date + 'T23:59:59');
+            return absenceDate > now;
+        });
+    });
+    TeamManager.saveTeams(teams);
+    
+    // Очистка старых уведомлений админу (старше 30 дней)
+    const adminNotifications = JSON.parse(localStorage.getItem('horting_admin_notifications') || '[]');
+    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const filteredAdmin = adminNotifications.filter(notif => new Date(notif.date) > monthAgo);
+    localStorage.setItem('horting_admin_notifications', JSON.stringify(filteredAdmin));
 }
 
 // Управление данными команд
@@ -233,12 +364,4 @@ if (document.readyState === 'loading') {
 }
 
 // Очистка старых данных при запуске
-TeamManager.cleanOldAbsences();
-
-// Привязка событий для страницы входа
-if (document.getElementById('loginBtn')) {
-    document.getElementById('loginBtn').addEventListener('click', login);
-    document.getElementById('passwordInput').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') login();
-    });
-}
+cleanOldData();

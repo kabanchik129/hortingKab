@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Хортинг - Команда</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="team-header">
+            <div>
+                <h1 id="teamName">Команда</h1>
+                <p id="userRole">Роль: Завантаження...</p>
+            </div>
+            <div class="user-info">
+                <p id="userInfo"></p>
+                <button class="logout-btn" onclick="logout()">Вийти</button>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab('main')">Головна</button>
+            <button class="tab-btn" onclick="showTab('members')">Склад команди</button>
+            <button class="tab-btn" onclick="showTab('notifications')">Сповіщення</button>
+            <button class="tab-btn" onclick="showTab('tasks')">Завдання</button>
+            <button class="tab-btn" onclick="showTab('absence')">Відсутність та звернення</button>
+        </div>
+
+        <main>
+            <!-- Вкладка Главная -->
+            <div id="mainTab">
+                <div class="section">
+                    <h3>Загальні сповіщення</h3>
+                    <div id="globalNotificationsTeam"></div>
+                </div>
+                
+                <div class="section">
+                    <h3>Сповіщення команди</h3>
+                    <div id="teamNotifications"></div>
+                    <div id="addNotificationSection" style="display: none;">
+                        <button class="add-btn" onclick="showAddNotificationForm()">+ Додати сповіщення</button>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h3>Найближчі заняття</h3>
+                    <div id="nextTrainings"></div>
+                </div>
+            </div>
+
+            <!-- Вкладка Состав -->
+            <div id="membersTab" style="display: none;">
+                <div class="section">
+                    <h3>Склад команди</h3>
+                    <div id="membersList"></div>
+                    <div id="addMemberSection" style="display: none;">
+                        <button class="add-btn" onclick="showAddMemberForm()">+ Додати члена команди</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Вкладка Уведомления -->
+            <div id="notificationsTab" style="display: none;">
+                <div class="section">
+                    <h3>Всі сповіщення команди</h3>
+                    <div id="allTeamNotifications"></div>
+                </div>
+            </div>
+
+            <!-- Вкладка Задачи -->
+            <div id="tasksTab" style="display: none;">
+                <div class="section">
+                    <h3>Завдання команди</h3>
+                    <div id="tasksList"></div>
+                    <div id="addTaskSection" style="display: none;">
+                        <button class="add-btn" onclick="showAddTaskForm()">+ Додати завдання</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Вкладка Отсутствие и Обращения -->
+            <div id="absenceTab" style="display: none;">
+                <div class="section">
+                    <h3>Повідомити про відсутність</h3>
+                    <div class="absence-form">
+                        <p><strong>Увага:</strong> Повідомлення автоматично видаляється в день відсутності о 23:59</p>
+                        <div class="form-row">
+                            <input type="text" id="absenceName" placeholder="Ваше ім'я">
+                            <input type="date" id="absenceDate">
+                            <select id="absenceReason">
+                                <option value="хвороба">Хвороба</option>
+                                <option value="сімейні обставини">Сімейні обставини</option>
+                                <option value="навчання">Навчання</option>
+                                <option value="інше">Інша причина</option>
+                            </select>
+                            <button onclick="reportAbsence()">Надіслати командиру</button>
+                        </div>
+                    </div>
+                    
+                    <h3 style="margin-top: 30px;">Заплановані відсутності</h3>
+                    <div id="absencesList"></div>
+                </div>
+                
+                <div class="section">
+                    <h3>Звернення до адміністратора</h3>
+                    <div class="absence-form">
+                        <p>Тут ви можете звернутися до адміністратора системи</p>
+                        <div class="form-row">
+                            <textarea id="adminMessage" placeholder="Ваше повідомлення адміністратору..." rows="3" style="grid-column: 1 / -1; padding: 12px; border: 1px solid #415a77; border-radius: 8px; background: rgba(255, 255, 255, 0.1); color: white;"></textarea>
+                            <select id="messageType" style="grid-column: span 2;">
+                                <option value="проблема">Проблема з сайтом</option>
+                                <option value="питання">Запитання</option>
+                                <option value="пропозиція">Пропозиція</option>
+                                <option value="інше">Інше</option>
+                            </select>
+                            <button onclick="sendAdminMessage()" style="grid-column: span 2;">Надіслати адміністратору</button>
+                        </div>
+                    </div>
+                    
+                    <h3 style="margin-top: 30px;">Мої звернення</h3>
+                    <div id="myMessagesList"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        let currentUser = null;
+        let currentTeam = null;
+        let canEdit = false;
+
+        // Инициализация
+        function initTeamPage() {
+            // Проверяем, не админ ли это просматривает команду
+            const adminView = sessionStorage.getItem('horting_admin_view');
+            const viewTeam = sessionStorage.getItem('horting_view_team');
+            
+            if (adminView === 'true' && viewTeam) {
+                // Админ просматривает команду
+                currentUser = {
+                    role: 'admin_view',
+                    teamId: parseInt(viewTeam),
+                    isCommander: true,
+                    isDeputy: true,
+                    teamType: viewTeam <= 3 ? 'mal' : 'str'
+                };
+                canEdit = false; // Админ только просматривает
+                
+                document.getElementById('userInfo').textContent = 
+                    `Перегляд команди ${viewTeam} (адміністратор)`;
+                document.getElementById('userRole').textContent = 'Роль: Перегляд (адмін)';
+                document.getElementById('userRole').innerHTML += '<span class="view-badge">Перегляд</span>';
+            } else {
+                // Обычный пользователь
+                currentUser = checkAuth();
+                if (!currentUser) return;
+                
+                if (currentUser.role === 'admin') {
+                    window.location.href = 'dashboard.html';
+                    return;
+                }
+                
+                if (!currentUser.teamId) {
+                    logout();
+                    return;
+                }
+                
+                canEdit = currentUser.isCommander || currentUser.isDeputy;
+                
+                document.getElementById('userInfo').textContent = 
+                    `Команда ${currentUser.teamId} (${currentUser.teamType === 'mal' ? 'молодші' : 'старші'})`;
+                document.getElementById('userRole').textContent = 
+                    `Роль: ${currentUser.isCommander ? 'Командир' : 
+                            currentUser.isDeputy ? 'Заступник' : 'Боець'}`;
+            }
+            
+            // Загружаем данные команды
+            loadTeamData();
+            
+            // Показываем/скрываем элементы управления
+            if (canEdit) {
+                document.getElementById('addNotificationSection').style.display = 'block';
+                document.getElementById('addMemberSection').style.display = 'block';
+                document.getElementById('addTaskSection').style.display = 'block';
+            }
+            
+            // Загружаем тренировки
+            loadNextTrainings();
+            // Загружаем обращения
+            loadMyMessages();
+            
+            // Устанавливаем завтрашнюю дату по умолчанию
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById('absenceDate').valueAsDate = tomorrow;
+            
+            // Устанавливаем имя из данных пользователя
+            if (currentUser.role !== 'admin_view') {
+                const team = TeamManager.getTeam(currentUser.teamId);
+                const member = team.members.find(m => m.callSign.includes('Командир') || m.callSign.includes('Заступник') || m.callSign);
+                if (member) {
+                    document.getElementById('absenceName').value = member.name;
+                }
+            }
+            
+            document.getElementById('teamName').textContent = 
+                CONFIG.teams[currentUser.teamId].name;
+        }
+
+        function loadTeamData() {
+            currentTeam = TeamManager.getTeam(currentUser.teamId);
+            
+            loadTeamMembers();
+            loadTeamNotifications();
+            loadAllTeamNotifications();
+            loadGlobalNotifications();
+            loadTasks();
+            loadAbsences();
+        }
+
+        function loadTeamMembers() {
+            const container = document.getElementById('membersList');
+            
+            if (!currentTeam.members.length) {
+                container.innerHTML = '<p>Ще немає членів команди</p>';
+                return;
+            }
+            
+            container.innerHTML = currentTeam.members.map(member => `
+                <div class="member-item">
+                    <div>
+                        <strong>${member.callSign}</strong><br>
+                        ${member.name}<br>
+                        <small>${member.rank}</small>
+                    </div>
+                    <div>
+                        <span class="role-badge ${member.role === 'command' ? 'role-kam' : 
+                                                  member.role === 'deputy' ? 'role-zam' : ''}">
+                            ${member.role === 'command' ? 'Командир' : 
+                             member.role === 'deputy' ? 'Заступник' : 'Боець'}
+                        </span>
+                        ${canEdit ? `<button onclick="removeMember('${member.id}')" style="margin-left: 10px; background: #ff6b6b; padding: 2px 8px; font-size: 0.8rem;">Видалити</button>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function loadTeamNotifications() {
+            const container = document.getElementById('teamNotifications');
+            const recent = currentTeam.notifications.slice(-5).reverse();
+            
+            if (!recent.length) {
+                container.innerHTML = '<p>Ще немає сповіщень</p>';
+                return;
+            }
+            
+            container.innerHTML = recent.map(notif => `
+                <div class="notification-item team">
+                    <strong>${notif.title}</strong>
+                    <p>${notif.message}</p>
+                    <div class="notification-date">
+                        ${formatDate(notif.date)} • ${notif.author}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function loadAllTeamNotifications() {
+            const container = document.getElementById('allTeamNotifications');
+            const all = [...currentTeam.notifications].reverse();
+            
+            if (!all.length) {
+                container.innerHTML = '<p>Ще немає сповіщень</p>';
+                return;
+            }
+            
+            container.innerHTML = all.map(notif => `
+                <div class="notification-item team">
+                    <strong>${notif.title}</strong>
+                    <p>${notif.message}</p>
+                    <div class="notification-date">
+                        ${formatDate(notif.date)} • ${notif.author}
+                        ${canEdit ? `<button onclick="deleteNotification('${notif.id}')" style="margin-left: 10px; background: #ff6b6b; padding: 2px 8px; font-size: 0.8rem;">Видалити</button>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function loadGlobalNotifications() {
+            const notifications = JSON.parse(localStorage.getItem('horting_global_notifications') || '[]');
+            const container = document.getElementById('globalNotificationsTeam');
+            const recent = notifications.slice(-3).reverse();
+            
+            if (!recent.length) {
+                container.innerHTML = '<p>Немає загальних сповіщень</p>';
+                return;
+            }
+            
+            container.innerHTML = recent.map(notif => `
+                <div class="notification-item">
+                    <strong>${notif.title}</strong>
+                    <p>${notif.message}</p>
+                    <div class="notification-date">
+                        ${formatDate(notif.date)} • ${notif.author}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function loadTasks() {
+            const container = document.getElementById('tasksList');
+            const tasks = currentTeam.tasks;
+            
+            if (!tasks.length) {
+                container.innerHTML = '<p>Ще немає завдань</p>';
+                return;
+            }
+            
+            container.innerHTML = tasks.map(task => `
+                <div class="notification-item" style="border-left-color: ${task.completed ? '#1a936f' : '#ff9e00'}">
+                    <strong>${task.title}</strong>
+                    <p>${task.description}</p>
+                    <div class="notification-date">
+                        ${formatDate(task.date)}
+                        ${canEdit ? `
+                            <button onclick="toggleTask('${task.id}')" style="margin-left: 10px; background: ${task.completed ? '#ff9e00' : '#1a936f'}; padding: 2px 8px; font-size: 0.8rem;">
+                                ${task.completed ? 'Відновити' : 'Виконано'}
+                            </button>
+                            <button onclick="deleteTask('${task.id}')" style="margin-left: 5px; background: #ff6b6b; padding: 2px 8px; font-size: 0.8rem;">Видалити</button>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function loadAbsences() {
+            const container = document.getElementById('absencesList');
+            const absences = currentTeam.absences;
+            
+            if (!absences.length) {
+                container.innerHTML = '<p>Немає запланованих відсутностей</p>';
+                return;
+            }
+            
+            container.innerHTML = absences.map(abs => `
+                <div class="absence-item">
+                    <strong>${abs.memberName}</strong> не буде ${abs.date}<br>
+                    <small>Причина: ${abs.reason}</small>
+                    <div class="notification-date">
+                        ${canEdit ? `<button onclick="deleteAbsence('${abs.id}')" style="margin-left: 10px; background: #ff6b6b; padding: 2px 8px; font-size: 0.8rem;">Видалити</button>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function loadMyMessages() {
+            const container = document.getElementById('myMessagesList');
+            const notifications = JSON.parse(localStorage.getItem('horting_admin_notifications') || '[]');
+            
+            // Фильтруем сообщения от этой команды
+            const myMessages = notifications.filter(n => n.fromTeam == currentUser.teamId);
+            
+            if (!myMessages.length) {
+                container.innerHTML = '<p>Ви ще не надсилали звернень</p>';
+                return;
+            }
+            
+            container.innerHTML = myMessages.reverse().map(msg => `
+                <div class="notification-item" style="border-left-color: #9d4edd;">
+                    <strong>${msg.message.split(']')[0]}]</strong>
+                    <p>${msg.message.split('] ')[1] || msg.message}</p>
+                    <div class="notification-date">
+                        ${formatDate(msg.date)}
+                        ${msg.read ? '<span style="color: #1a936f;">✓ Прочитано</span>' : '<span style="color: #ff9e00;">Очікує розгляду</span>'}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function loadNextTrainings() {
+            const container = document.getElementById('nextTrainings');
+            const trainings = getNextTrainings(3);
+            
+            if (!trainings.length) {
+                container.innerHTML = '<p>Немає запланованих занять</p>';
+                return;
+            }
+            
+            container.innerHTML = trainings.map(training => `
+                <div class="notification-item" style="border-left-color: #00bbf9;">
+                    <strong>${training.day.charAt(0).toUpperCase() + training.day.slice(1)}</strong>
+                    <p>Дата: ${training.date}</p>
+                    <div class="notification-date">
+                        ${training.isToday ? '<span style="color: #ffd60a;">● Сьогодні</span>' : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Отправка сообщения админу
+        function sendAdminMessage() {
+            const message = document.getElementById('adminMessage').value.trim();
+            const type = document.getElementById('messageType').value;
+            
+            if (!message) {
+                alert('Введіть текст повідомлення!');
+                return;
+            }
+            
+            const fullMessage = `[${type.toUpperCase()}] ${message}`;
+            
+            sendToAdmin(fullMessage, currentUser.teamId);
+            
+            // Также сохраняем в локальные уведомления команды
+            TeamManager.addTeamNotification(
+                currentUser.teamId,
+                {
+                    title: 'Звернення до адміна відправлено',
+                    message: `Тип: ${type}. ${message.substring(0, 50)}...`
+                },
+                'Система'
+            );
+            
+            document.getElementById('adminMessage').value = '';
+            alert('Повідомлення адміністратору відправлено!');
+            loadMyMessages();
+            loadTeamData();
+        }
+
+        function showAddMemberForm() {
+            if (!canEdit) return;
+            
+            const name = prompt('Повне ім\'я:');
+            if (!name) return;
+            
+            const callSign = prompt('Позивний:');
+            if (!callSign) return;
+            
+            const rank = prompt('Звання:');
+            if (!rank) return;
+            
+            const role = prompt('Роль (command/ deputy/ soldier):');
+            if (!['command', 'deputy', 'soldier'].includes(role)) {
+                alert('Невірна роль. Використовуйте: command, deputy або soldier');
+                return;
+            }
+            
+            TeamManager.addMember(currentUser.teamId, {
+                name: name,
+                callSign: callSign,
+                rank: rank,
+                role: role
+            });
+            
+            loadTeamData();
+            alert('Члена команди додано!');
+        }
+
+        function removeMember(memberId) {
+            if (!canEdit || !confirm('Видалити цього члена команди?')) return;
+            
+            TeamManager.removeMember(currentUser.teamId, memberId);
+            loadTeamData();
+        }
+
+        function showAddNotificationForm() {
+            if (!canEdit) return;
+            
+            const title = prompt('Заголовок сповіщення:');
+            if (!title) return;
+            
+            const message = prompt('Текст сповіщення:');
+            if (!message) return;
+            
+            TeamManager.addTeamNotification(
+                currentUser.teamId, 
+                { title: title, message: message },
+                currentUser.isCommander ? 'Командир' : 'Заступник'
+            );
+            
+            loadTeamData();
+            alert('Сповіщення додано!');
+        }
+
+        function deleteNotification(notificationId) {
+            if (!canEdit || !confirm('Видалити це сповіщення?')) return;
+            
+            currentTeam.notifications = currentTeam.notifications.filter(n => n.id !== notificationId);
+            TeamManager.saveTeam(currentUser.teamId, currentTeam);
+            loadTeamData();
+        }
+
+        function showAddTaskForm() {
+            if (!canEdit) return;
+            
+            const title = prompt('Назва завдання:');
+            if (!title) return;
+            
+            const description = prompt('Опис завдання:');
+            if (!description) return;
+            
+            TeamManager.addTask(currentUser.teamId, {
+                title: title,
+                description: description
+            });
+            
+            loadTeamData();
+            alert('Завдання додано!');
+        }
+
+        function toggleTask(taskId) {
+            if (!canEdit) return;
+            
+            const task = currentTeam.tasks.find(t => t.id === taskId);
+            if (task) {
+                task.completed = !task.completed;
+                TeamManager.saveTeam(currentUser.teamId, currentTeam);
+                loadTasks();
+            }
+        }
+
+        function deleteTask(taskId) {
+            if (!canEdit || !confirm('Видалити це завдання?')) return;
+            
+            currentTeam.tasks = currentTeam.tasks.filter(t => t.id !== taskId);
+            TeamManager.saveTeam(currentUser.teamId, currentTeam);
+            loadTasks();
+        }
+
+        function reportAbsence() {
+            const name = document.getElementById('absenceName').value.trim();
+            const date = document.getElementById('absenceDate').value;
+            const reason = document.getElementById('absenceReason').value;
+            
+            if (!name || !date || !reason) {
+                alert('Заповніть всі поля!');
+                return;
+            }
+            
+            // Проверка формата даты
+            const dateObj = new Date(date);
+            if (isNaN(dateObj.getTime())) {
+                alert('Невірна дата!');
+                return;
+            }
+            
+            // Проверяем, не является ли дата днем занятия
+            if (isTrainingDay(dateObj)) {
+                const dayNames = ['неділя', 'понеділок', 'вівторок', 'середа', 'четвер', 'п\'ятниця', 'субота'];
+                const dayName = dayNames[dateObj.getDay()];
+                if (!confirm(`Увага! ${date} - це день заняття (${dayName}). Все одно відправити?`)) {
+                    return;
+                }
+            }
+            
+            TeamManager.addAbsence(currentUser.teamId, {
+                memberName: name,
+                date: date,
+                reason: reason
+            });
+            
+            // Отправляем уведомление админу
+            sendToAdmin(
+                `ВІДСУТНІСТЬ: ${name} не буде на заняттях ${date}. Причина: ${reason}. Команда: ${currentUser.teamId}`,
+                currentUser.teamId
+            );
+            
+            // Отправляем уведомление командиру (если пользователь не командир)
+            if (!currentUser.isCommander && !currentUser.isDeputy) {
+                TeamManager.addTeamNotification(
+                    currentUser.teamId,
+                    {
+                        title: 'Повідомлення про відсутність',
+                        message: `${name} не буде ${date}. Причина: ${reason}`
+                    },
+                    'Система'
+                );
+            }
+            
+            document.getElementById('absenceName').value = '';
+            document.getElementById('absenceDate').value = '';
+            
+            loadTeamData();
+            loadMyMessages();
+            alert('Повідомлення відправлено! Воно буде автоматично видалено ' + date + ' о 23:59');
+        }
+
+        function deleteAbsence(absenceId) {
+            if (!canEdit || !confirm('Видалити запис про відсутність?')) return;
+            
+            currentTeam.absences = currentTeam.absences.filter(a => a.id !== absenceId);
+            TeamManager.saveTeam(currentUser.teamId, currentTeam);
+            loadAbsences();
+        }
+
+        function showTab(tabName) {
+            // Скрыть все табы
+            document.querySelectorAll('[id$="Tab"]').forEach(tab => {
+                tab.style.display = 'none';
+            });
+            
+            // Убрать активный класс со всех кнопок
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Показать выбранный таб
+            document.getElementById(tabName + 'Tab').style.display = 'block';
+            
+            // Активировать кнопку
+            event.target.classList.add('active');
+            
+            // Обновляем данные если нужно
+            if (tabName === 'tasks') loadTasks();
+            if (tabName === 'absence') {
+                loadAbsences();
+                loadMyMessages();
+            }
+            if (tabName === 'notifications') loadAllTeamNotifications();
+            if (tabName === 'members') loadTeamMembers();
+        }
+
+        // Инициализация при загрузке
+        document.addEventListener('DOMContentLoaded', initTeamPage);
+    </script>
+</body>
+</html>
