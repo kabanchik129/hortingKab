@@ -65,12 +65,157 @@ function checkPassword(password) {
     return { valid: false };
 }
 
+// ============= FIREBASE НАСТРОЙКИ =============
+
+let firebaseApp = null;
+let firestoreDB = null;
+let firebaseConnected = false;
+let firebaseCollection = 'horting';
+let realtimeListener = null;
+
+// ============= ИНИЦИАЛИЗАЦИЯ FIREBASE =============
+
+function initFirebase() {
+    const configText = document.getElementById('firebase-config').value.trim();
+    const collection = document.getElementById('firestore-collection').value.trim() || 'horting';
+    
+    if (!configText) {
+        alert('Будь ласка, введіть конфігурацію Firebase');
+        return;
+    }
+    
+    try {
+        // Парсим конфигурацию
+        const config = parseFirebaseConfig(configText);
+        
+        // Инициализируем Firebase
+        if (firebase.apps.length === 0) {
+            firebaseApp = firebase.initializeApp(config);
+        } else {
+            firebaseApp = firebase.app();
+        }
+        
+        // Получаем Firestore
+        firestoreDB = firebase.firestore();
+        firebaseCollection = collection;
+        
+        // Сохраняем настройки
+        localStorage.setItem('firebase_config', JSON.stringify(config));
+        localStorage.setItem('firebase_collection', collection);
+        
+        // Тестируем подключение
+        testFirebaseConnection();
+        
+    } catch (error) {
+        console.error('Помилка ініціалізації Firebase:', error);
+        alert('Помилка ініціалізації Firebase: ' + error.message);
+        updateFirebaseStatus(false);
+    }
+}
+
+function parseFirebaseConfig(configText) {
+    try {
+        // Убираем комментарии и лишние пробелы
+        let cleanConfig = configText.replace(/\/\/.*$/gm, '').trim();
+        
+        // Если это JSON объект
+        if (cleanConfig.startsWith('{')) {
+            return JSON.parse(cleanConfig);
+        }
+        
+        // Если это объект JavaScript (например, из консоли Firebase)
+        const config = {};
+        const lines = cleanConfig.split('\n').filter(line => line.trim());
+        
+        lines.forEach(line => {
+            const match = line.match(/(\w+):\s*['"]([^'"]+)['"]/);
+            if (match) {
+                config[match[1]] = match[2];
+            }
+        });
+        
+        if (!config.apiKey) {
+            throw new Error('Невірний формат конфігурації Firebase');
+        }
+        
+        return config;
+    } catch (error) {
+        throw new Error('Невірний формат конфігурації Firebase: ' + error.message);
+    }
+}
+
+async function testFirebaseConnection() {
+    const statusElement = document.getElementById('firebase-status');
+    statusElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Перевірка підключення...';
+    
+    try {
+        // Простая проверка подключения
+        await firestoreDB.collection(firebaseCollection).limit(1).get();
+        
+        firebaseConnected = true;
+        statusElement.className = 'firebase-status connected';
+        statusElement.innerHTML = '<i class="fas fa-check-circle"></i> Підключено до Firebase';
+        
+        // Переходим к экрану входа
+        setTimeout(() => {
+            document.getElementById('firebase-screen').classList.remove('active');
+            document.getElementById('login-screen').classList.add('active');
+            document.getElementById('password').focus();
+            updateSyncStatus();
+        }, 1000);
+        
+        showNotification('Підключено до Firebase!');
+        
+    } catch (error) {
+        console.error('Помилка підключення до Firebase:', error);
+        firebaseConnected = false;
+        statusElement.className = 'firebase-status disconnected';
+        statusElement.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Помилка підключення: ${error.message}`;
+    }
+}
+
+function skipFirebase() {
+    firebaseConnected = false;
+    localStorage.removeItem('firebase_config');
+    localStorage.removeItem('firebase_collection');
+    
+    document.getElementById('firebase-screen').classList.remove('active');
+    document.getElementById('login-screen').classList.add('active');
+    document.getElementById('password').focus();
+    
+    showNotification('Режим локального зберігання');
+}
+
+function showFirebaseConfig() {
+    hideSyncModal();
+    document.getElementById('login-screen').classList.remove('active');
+    document.getElementById('main-screen').classList.remove('active');
+    document.getElementById('firebase-screen').classList.add('active');
+    
+    // Загружаем сохраненные настройки если есть
+    const savedConfig = localStorage.getItem('firebase_config');
+    if (savedConfig) {
+        try {
+            const config = JSON.parse(savedConfig);
+            document.getElementById('firebase-config').value = JSON.stringify(config, null, 2);
+        } catch (e) {
+            // ignore
+        }
+    }
+    
+    const savedCollection = localStorage.getItem('firebase_collection');
+    if (savedCollection) {
+        document.getElementById('firestore-collection').value = savedCollection;
+    }
+}
+
 // ============= СИСТЕМА ХРАНЕНИЯ =============
 
 function initializeDatabase() {
     const defaultDB = {
-        version: '4.0',
+        version: '5.0', // Версия для Firebase
         lastUpdated: new Date().toISOString(),
+        lastUpdatedBy: null,
         settings: {
             autoCleanup: true,
             cleanupTime: '23:59'
@@ -111,17 +256,10 @@ let currentUser = null;
 let database = null;
 let editMembersCache = [];
 
-// ============= СИНХРОНИЗАЦИЯ =============
-
-const GITHUB_API = 'https://api.github.com';
-let githubToken = localStorage.getItem('github_token') || '';
-let gistId = localStorage.getItem('horting_gist_id') || '';
-let lastSync = localStorage.getItem('last_sync') || 'Немає';
-
 // ============= ЗАГРУЗКА И СОХРАНЕНИЕ ДАННЫХ =============
 
 async function loadDatabase() {
-    // Загружаем локальные данные
+    // Сначала загружаем локальные данные
     const saved = localStorage.getItem('horting_database');
     let localDB = initializeDatabase();
     
@@ -133,54 +271,50 @@ async function loadDatabase() {
         }
     }
     
-    // Если есть доступ к GitHub, пытаемся загрузить оттуда
-    if (githubToken && gistId) {
+    // Если подключены к Firebase, пытаемся загрузить данные оттуда
+    if (firebaseConnected && firestoreDB) {
         try {
-            console.log('Спроба завантажити дані з GitHub...');
-            const githubData = await loadFromGitHubSilent();
-            if (githubData) {
-                // Проверяем какая база новее
+            console.log('Спроба завантажити дані з Firebase...');
+            const firebaseData = await loadFromFirebaseSilent();
+            
+            if (firebaseData) {
+                // Сравниваем даты обновления
                 const localDate = new Date(localDB.lastUpdated || 0);
-                const githubDate = new Date(githubData.lastUpdated || 0);
+                const firebaseDate = new Date(firebaseData.lastUpdated || 0);
                 
-                if (githubDate > localDate) {
-                    console.log('Дані з GitHub новіші, використовую їх');
-                    // Объединяем настройки
-                    githubData.settings = { ...localDB.settings, ...githubData.settings };
-                    saveDatabaseLocally(githubData);
-                    return githubData;
+                if (firebaseDate > localDate) {
+                    console.log('Дані з Firebase новіші, використовую їх');
+                    // Сохраняем локальные настройки
+                    firebaseData.settings = { ...localDB.settings, ...firebaseData.settings };
+                    saveDatabaseLocally(firebaseData);
+                    return firebaseData;
                 } else {
                     console.log('Локальні дані новіші або такі ж самі');
                 }
             }
         } catch (error) {
-            console.log('Не вдалося завантажити з GitHub:', error.message);
+            console.log('Не вдалося завантажити з Firebase:', error.message);
         }
     }
     
     return localDB;
 }
 
-async function loadFromGitHubSilent() {
-    if (!githubToken || !gistId) return null;
+async function loadFromFirebaseSilent() {
+    if (!firebaseConnected || !firestoreDB) return null;
     
     try {
-        const response = await fetch(`${GITHUB_API}/gists/${gistId}`, {
-            headers: {
-                'Authorization': `token ${githubToken}`,
-                'Accept': 'application/vnd.github.v3+json'
-            }
-        });
+        const docRef = firestoreDB.collection(firebaseCollection).doc('data');
+        const doc = await docRef.get();
         
-        if (!response.ok) throw new Error('Помилка завантаження');
-        
-        const result = await response.json();
-        const fileName = Object.keys(result.files)[0];
-        const content = result.files[fileName].content;
-        
-        return JSON.parse(content);
+        if (doc.exists) {
+            return doc.data();
+        } else {
+            console.log('Документ не знайдено в Firebase');
+            return null;
+        }
     } catch (error) {
-        console.error('Помилка завантаження з GitHub:', error);
+        console.error('Помилка завантаження з Firebase:', error);
         return null;
     }
 }
@@ -199,199 +333,218 @@ function saveDatabase() {
     saveDatabaseLocally();
 }
 
-// ============= ОБНОВЛЕНИЕ СТАТУСА СИНХРОНИЗАЦИИ =============
+// ============= СИНХРОНИЗАЦИЯ С FIREBASE =============
 
-function updateSyncStatus() {
-    const statusElement = document.getElementById('sync-status-text');
-    const lastSyncElement = document.getElementById('last-sync');
-    const gistIdElement = document.getElementById('current-gist-id');
-    
-    if (githubToken && gistId) {
-        statusElement.textContent = 'Синхронізовано з GitHub';
-        statusElement.style.color = '#27ae60';
-    } else if (githubToken) {
-        statusElement.textContent = 'GitHub підключено';
-        statusElement.style.color = '#3498db';
-    } else {
-        statusElement.textContent = 'Локальне зберігання';
-        statusElement.style.color = '#7f8c8d';
-    }
-    
-    lastSyncElement.textContent = lastSync;
-    gistIdElement.textContent = gistId || 'Не вказано';
-}
-
-// ============= СИНХРОНИЗАЦИЯ С GITHUB =============
-
-async function saveToGitHub() {
-    const token = document.getElementById('github-token').value.trim() || githubToken;
-    const gistName = 'horting-data';
-    const inputGistId = document.getElementById('gist-id').value.trim();
-    
-    if (!token) {
-        alert('Будь ласка, введіть GitHub токен');
+async function saveToFirebase() {
+    if (!firebaseConnected || !firestoreDB) {
+        alert('Не підключено до Firebase. Спочатку налаштуйте підключення.');
+        showFirebaseConfig();
         return;
     }
     
-    if (inputGistId) {
-        gistId = inputGistId;
-        localStorage.setItem('horting_gist_id', gistId);
+    // Обновляем настройки коллекции если изменились
+    const newCollection = document.getElementById('firestore-collection-input').value.trim();
+    if (newCollection && newCollection !== firebaseCollection) {
+        firebaseCollection = newCollection;
+        localStorage.setItem('firebase_collection', firebaseCollection);
     }
     
     // Обновляем время последнего изменения
     database.lastUpdated = new Date().toISOString();
-    
-    const data = {
-        files: {
-            [gistName + '.json']: {
-                content: JSON.stringify(database, null, 2)
-            }
-        },
-        description: 'Хортинг - дані гуртка | Оновлено: ' + new Date().toLocaleString('uk-UA'),
-        public: false
-    };
+    database.lastUpdatedBy = currentUser ? currentUser.displayName : 'unknown';
     
     try {
-        const url = gistId ? `${GITHUB_API}/gists/${gistId}` : `${GITHUB_API}/gists`;
-        const method = gistId ? 'PATCH' : 'POST';
+        const docRef = firestoreDB.collection(firebaseCollection).doc('data');
+        await docRef.set(database, { merge: true });
         
-        const response = await fetch(url, {
-            method: method,
-            headers: {
-                'Authorization': `token ${token}`,
-                'Content-Type': 'application/json',
-                'Accept': 'application/vnd.github.v3+json'
-            },
-            body: JSON.stringify(data)
-        });
+        localStorage.setItem('last_sync', new Date().toLocaleString('uk-UA'));
+        updateSyncStatus();
         
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Помилка запиту');
+        showNotification('Дані успішно збережено на Firebase!');
+        
+        // Включаем реалтайм синхронизацию если еще не включена
+        if (!realtimeListener) {
+            startRealtimeSync();
         }
         
-        const result = await response.json();
-        gistId = result.id;
-        githubToken = token;
-        
-        localStorage.setItem('github_token', token);
-        localStorage.setItem('horting_gist_id', gistId);
-        localStorage.setItem('last_sync', new Date().toLocaleString('uk-UA'));
-        lastSync = localStorage.getItem('last_sync');
-        
-        // Сохраняем также локально
-        saveDatabase();
-        
-        updateSyncStatus();
-        showNotification('Дані успішно збережено на GitHub!');
-        hideSyncModal();
     } catch (error) {
-        console.error('Помилка збереження:', error);
-        alert('Помилка збереження на GitHub: ' + error.message);
+        console.error('Помилка збереження в Firebase:', error);
+        alert('Помилка збереження в Firebase: ' + error.message);
     }
 }
 
-async function loadFromGitHub() {
-    const token = document.getElementById('github-token').value.trim() || githubToken;
-    const inputGistId = document.getElementById('gist-id').value.trim() || gistId;
-    
-    if (!token) {
-        alert('Будь ласка, введіть GitHub токен');
+async function loadFromFirebase() {
+    if (!firebaseConnected || !firestoreDB) {
+        alert('Не підключено до Firebase. Спочатку налаштуйте підключення.');
+        showFirebaseConfig();
         return;
     }
     
-    if (!inputGistId) {
-        alert('Введіть Gist ID для завантаження даних');
-        return;
+    // Обновляем настройки коллекции если изменились
+    const newCollection = document.getElementById('firestore-collection-input').value.trim();
+    if (newCollection && newCollection !== firebaseCollection) {
+        firebaseCollection = newCollection;
+        localStorage.setItem('firebase_collection', firebaseCollection);
     }
     
     try {
-        const response = await fetch(`${GITHUB_API}/gists/${inputGistId}`, {
-            headers: {
-                'Authorization': `token ${token}`,
-                'Accept': 'application/vnd.github.v3+json'
-            }
-        });
+        const docRef = firestoreDB.collection(firebaseCollection).doc('data');
+        const doc = await docRef.get();
         
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Помилка завантаження');
+        if (!doc.exists) {
+            alert('Дані не знайдено в Firebase. Спочатку збережіть дані.');
+            return;
         }
         
-        const result = await response.json();
-        const fileName = Object.keys(result.files)[0];
-        const content = result.files[fileName].content;
+        const firebaseData = doc.data();
         
-        const importedData = JSON.parse(content);
-        
-        if (confirm('Це завантажить дані з GitHub і перезапише локальні. Продовжити?')) {
-            database = importedData;
-            gistId = inputGistId;
-            githubToken = token;
-            
-            localStorage.setItem('github_token', token);
-            localStorage.setItem('horting_gist_id', gistId);
-            localStorage.setItem('last_sync', new Date().toLocaleString('uk-UA'));
-            lastSync = localStorage.getItem('last_sync');
-            
+        if (confirm('Це завантажить дані з Firebase і перезапише локальні. Продовжити?')) {
+            database = firebaseData;
             saveDatabase();
+            
+            localStorage.setItem('last_sync', new Date().toLocaleString('uk-UA'));
             updateSyncStatus();
-            showNotification('Дані успішно завантажено з GitHub!');
+            
+            showNotification('Дані успішно завантажено з Firebase!');
             
             if (currentUser) {
                 loadData();
             }
             
-            hideSyncModal();
+            // Включаем реалтайм синхронизацию
+            startRealtimeSync();
         }
     } catch (error) {
-        console.error('Помилка завантаження:', error);
-        alert('Помилка завантаження з GitHub: ' + error.message);
+        console.error('Помилка завантаження з Firebase:', error);
+        alert('Помилка завантаження з Firebase: ' + error.message);
     }
 }
 
-function copySettings() {
-    const settings = {
-        token: githubToken,
-        gistId: gistId,
-        lastSync: lastSync
-    };
+function startRealtimeSync() {
+    if (!firebaseConnected || !firestoreDB || realtimeListener) return;
     
-    const settingsString = JSON.stringify(settings, null, 2);
-    
-    navigator.clipboard.writeText(settingsString).then(() => {
-        showNotification('Налаштування скопійовано в буфер обміну!');
-    }).catch(() => {
-        const textArea = document.createElement('textarea');
-        textArea.value = settingsString;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-        showNotification('Налаштування скопійовано!');
-    });
+    try {
+        const docRef = firestoreDB.collection(firebaseCollection).doc('data');
+        
+        realtimeListener = docRef.onSnapshot((doc) => {
+            if (doc.exists) {
+                const newData = doc.data();
+                const currentDate = new Date(database.lastUpdated || 0);
+                const newDate = new Date(newData.lastUpdated || 0);
+                
+                // Обновляем только если данные новее
+                if (newDate > currentDate) {
+                    console.log('Отримано оновлені дані з Firebase');
+                    
+                    // Сохраняем локальные настройки
+                    newData.settings = { ...database.settings, ...newData.settings };
+                    
+                    database = newData;
+                    saveDatabase();
+                    
+                    if (currentUser) {
+                        loadData();
+                    }
+                    
+                    showNotification('Дані оновлено з Firebase в реальному часі!');
+                }
+                
+                updateSyncIndicator('online');
+            }
+        }, (error) => {
+            console.error('Помилка реалтайм синхронізації:', error);
+            updateSyncIndicator('error');
+        });
+        
+        updateSyncIndicator('online');
+        console.log('Реалтайм синхронізація запущена');
+        
+    } catch (error) {
+        console.error('Помилка запуску реалтайм синхронізації:', error);
+        updateSyncIndicator('offline');
+    }
 }
 
-function pasteSettings() {
-    navigator.clipboard.readText().then(text => {
-        try {
-            const settings = JSON.parse(text);
-            if (settings.token && settings.gistId) {
-                document.getElementById('github-token').value = settings.token;
-                document.getElementById('gist-id').value = settings.gistId;
-                showNotification('Налаштування вставлено!');
-            } else {
-                alert('Невірний формат налаштувань');
-            }
-        } catch (e) {
-            alert('Невірний формат даних в буфері обміну');
-        }
-    }).catch(() => {
-        prompt('Вставте налаштування вручну (формат JSON з полями token та gistId)');
-    });
+function stopRealtimeSync() {
+    if (realtimeListener) {
+        realtimeListener();
+        realtimeListener = null;
+        console.log('Реалтайм синхронізація зупинена');
+    }
+}
+
+function updateSyncIndicator(status) {
+    const indicator = document.getElementById('sync-indicator');
+    const text = document.getElementById('sync-text');
+    const icon = indicator.querySelector('i');
+    
+    switch(status) {
+        case 'online':
+            icon.style.color = '#27ae60';
+            text.textContent = 'Онлайн';
+            text.style.color = '#27ae60';
+            break;
+        case 'offline':
+            icon.style.color = '#7f8c8d';
+            text.textContent = 'Офлайн';
+            text.style.color = '#7f8c8d';
+            break;
+        case 'error':
+            icon.style.color = '#e74c3c';
+            text.textContent = 'Помилка';
+            text.style.color = '#e74c3c';
+            break;
+        case 'syncing':
+            icon.style.color = '#3498db';
+            text.textContent = 'Синхронізація...';
+            text.style.color = '#3498db';
+            break;
+    }
+}
+
+function updateSyncStatus() {
+    const statusElement = document.getElementById('sync-status-text');
+    const lastSyncElement = document.getElementById('last-sync');
+    const firebaseStatusElement = document.getElementById('firebase-connection-status');
+    
+    if (firebaseConnected) {
+        statusElement.textContent = 'Синхронізовано з Firebase';
+        statusElement.style.color = '#27ae60';
+        
+        firebaseStatusElement.innerHTML = '<i class="fas fa-check-circle"></i> Підключено до Firebase';
+        firebaseStatusElement.style.background = 'rgba(39, 174, 96, 0.1)';
+        firebaseStatusElement.style.color = '#27ae60';
+        
+        // Обновляем индикатор в хедере
+        updateSyncIndicator('online');
+    } else {
+        statusElement.textContent = 'Локальне зберігання';
+        statusElement.style.color = '#7f8c8d';
+        
+        firebaseStatusElement.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Не підключено';
+        firebaseStatusElement.style.background = 'rgba(231, 76, 60, 0.1)';
+        firebaseStatusElement.style.color = '#e74c3c';
+        
+        updateSyncIndicator('offline');
+    }
+    
+    const lastSync = localStorage.getItem('last_sync') || 'Немає';
+    lastSyncElement.textContent = lastSync;
+}
+
+function showSyncModal() {
+    document.getElementById('firestore-collection-input').value = firebaseCollection;
+    updateSyncStatus();
+    document.getElementById('sync-modal').classList.remove('hidden');
+}
+
+function hideSyncModal() {
+    document.getElementById('sync-modal').classList.add('hidden');
 }
 
 function exportLocalData() {
+    if (!database) return;
+    
     const dataStr = JSON.stringify(database, null, 2);
     const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
     
@@ -436,17 +589,6 @@ function importLocalData() {
     input.click();
 }
 
-function showSyncModal() {
-    document.getElementById('github-token').value = githubToken;
-    document.getElementById('gist-id').value = gistId;
-    updateSyncStatus();
-    document.getElementById('sync-modal').classList.remove('hidden');
-}
-
-function hideSyncModal() {
-    document.getElementById('sync-modal').classList.add('hidden');
-}
-
 // ============= ОСНОВНЫЕ ФУНКЦИИ =============
 
 async function login() {
@@ -471,7 +613,7 @@ async function login() {
     loginBtn.disabled = true;
     
     try {
-        // Загружаем базу данных (теперь асинхронно)
+        // Загружаем базу данных
         database = await loadDatabase();
         
         currentUser = userInfo;
@@ -484,6 +626,12 @@ async function login() {
         setupInterface();
         loadData();
         showNotification(`Вітаємо, ${userInfo.displayName}!`);
+        
+        // Включаем реалтайм синхронизацию если подключены к Firebase
+        if (firebaseConnected) {
+            startRealtimeSync();
+        }
+        
     } catch (error) {
         console.error('Помилка завантаження:', error);
         showNotification('Помилка завантаження даних');
@@ -496,6 +644,9 @@ async function login() {
 
 function logout() {
     if (confirm('Вийти з системи?')) {
+        // Останавливаем реалтайм синхронизацию
+        stopRealtimeSync();
+        
         currentUser = null;
         document.getElementById('main-screen').classList.remove('active');
         document.getElementById('login-screen').classList.add('active');
@@ -852,14 +1003,26 @@ function reloadEditMembers() {
     });
 }
 
-function saveMembers() {
+async function saveMembers() {
     const members = editMembersCache.filter(member => 
         member.callsign && member.name && member.role && member.rank
     );
     
     database.groups[currentUser.group].members = members;
     database.groups[currentUser.group].lastUpdated = new Date().toISOString();
+    
+    // Сохраняем локально
     saveDatabase();
+    
+    // Сохраняем в Firebase если подключены
+    if (firebaseConnected) {
+        updateSyncIndicator('syncing');
+        try {
+            await saveToFirebase();
+        } catch (error) {
+            console.error('Помилка збереження в Firebase:', error);
+        }
+    }
     
     loadMembers(members);
     toggleEditMembers();
@@ -887,7 +1050,7 @@ function generateId() {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
 
-function addAnnouncement() {
+async function addAnnouncement() {
     const text = document.getElementById('announcement-text').value.trim();
     if (!text) {
         alert('Введіть текст оголошення');
@@ -910,7 +1073,19 @@ function addAnnouncement() {
         database.announcements.group[currentUser.group].push(announcement);
     }
     
+    // Сохраняем локально
     saveDatabase();
+    
+    // Сохраняем в Firebase если подключены
+    if (firebaseConnected) {
+        updateSyncIndicator('syncing');
+        try {
+            await saveToFirebase();
+        } catch (error) {
+            console.error('Помилка збереження в Firebase:', error);
+        }
+    }
+    
     hideAnnouncementModal();
     loadAnnouncements();
     showNotification('Оголошення додано!');
@@ -959,7 +1134,7 @@ function hideTaskModal() {
     document.getElementById('task-text').value = '';
 }
 
-function addTask() {
+async function addTask() {
     const text = document.getElementById('task-text').value.trim();
     if (!text) {
         alert('Введіть текст завдання');
@@ -975,7 +1150,20 @@ function addTask() {
     };
     
     database.tasks[currentUser.group].push(task);
+    
+    // Сохраняем локально
     saveDatabase();
+    
+    // Сохраняем в Firebase если подключены
+    if (firebaseConnected) {
+        updateSyncIndicator('syncing');
+        try {
+            await saveToFirebase();
+        } catch (error) {
+            console.error('Помилка збереження в Firebase:', error);
+        }
+    }
+    
     hideTaskModal();
     loadTasks();
     showNotification('Завдання додано!');
@@ -1005,7 +1193,7 @@ function hideAbsenceModal() {
     document.getElementById('absence-reason').value = '';
 }
 
-function submitAbsence() {
+async function submitAbsence() {
     const callsign = document.getElementById('absence-callsign').value.trim();
     const name = document.getElementById('absence-name').value.trim();
     const date = document.getElementById('absence-date').value;
@@ -1027,7 +1215,20 @@ function submitAbsence() {
     };
     
     database.absences.push(absence);
+    
+    // Сохраняем локально
     saveDatabase();
+    
+    // Сохраняем в Firebase если подключены
+    if (firebaseConnected) {
+        updateSyncIndicator('syncing');
+        try {
+            await saveToFirebase();
+        } catch (error) {
+            console.error('Помилка збереження в Firebase:', error);
+        }
+    }
+    
     hideAbsenceModal();
     loadAbsences();
     showNotification('Повідомлення надіслано!');
@@ -1058,7 +1259,7 @@ function hideMessageModal() {
     document.getElementById('message-from').value = '';
 }
 
-function sendMessage() {
+async function sendMessage() {
     const subject = document.getElementById('message-subject').value.trim();
     const text = document.getElementById('message-text').value.trim();
     const from = document.getElementById('message-from').value.trim();
@@ -1080,7 +1281,20 @@ function sendMessage() {
     };
     
     database.messages.push(message);
+    
+    // Сохраняем локально
     saveDatabase();
+    
+    // Сохраняем в Firebase если подключены
+    if (firebaseConnected) {
+        updateSyncIndicator('syncing');
+        try {
+            await saveToFirebase();
+        } catch (error) {
+            console.error('Помилка збереження в Firebase:', error);
+        }
+    }
+    
     hideMessageModal();
     showNotification('Повідомлення надіслано!');
 }
@@ -1231,10 +1445,23 @@ function loadSettings() {
     document.getElementById('cleanup-time').value = database.settings.cleanupTime || '23:59';
 }
 
-function saveSettings() {
+async function saveSettings() {
     database.settings.autoCleanup = document.getElementById('auto-cleanup').value === 'enabled';
     database.settings.cleanupTime = document.getElementById('cleanup-time').value;
+    
+    // Сохраняем локально
     saveDatabase();
+    
+    // Сохраняем в Firebase если подключены
+    if (firebaseConnected) {
+        updateSyncIndicator('syncing');
+        try {
+            await saveToFirebase();
+        } catch (error) {
+            console.error('Помилка збереження в Firebase:', error);
+        }
+    }
+    
     showNotification('Налаштування збережено!');
 }
 
@@ -1318,46 +1545,51 @@ function performCleanup() {
     }
 }
 
-// ============= АВТОСИНХРОНИЗАЦИЯ =============
-
-async function autoSyncOnLoad() {
-    if (!githubToken || !gistId) return;
-    
-    try {
-        console.log('Автосинхронізація...');
-        const githubData = await loadFromGitHubSilent();
-        
-        if (githubData && database) {
-            const localDate = new Date(database.lastUpdated || 0);
-            const githubDate = new Date(githubData.lastUpdated || 0);
-            
-            if (githubDate > localDate) {
-                console.log('Знайдено новіші дані на GitHub');
-                // Показываем уведомление о новых данных
-                setTimeout(() => {
-                    if (confirm('На сервері є новіші дані. Завантажити?')) {
-                        database = githubData;
-                        saveDatabase();
-                        showNotification('Дані оновлено з GitHub');
-                        
-                        if (currentUser) {
-                            loadData();
-                        }
-                    }
-                }, 1000);
-            }
-        }
-    } catch (error) {
-        console.log('Автосинхронізація не вдалась:', error.message);
-    }
-}
-
-// ============= ИНИЦИАЛИЗАЦИЯ =============
+// ============= ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ =============
 
 document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('password').focus();
+    // Проверяем сохраненную конфигурацию Firebase
+    const savedConfig = localStorage.getItem('firebase_config');
+    const savedCollection = localStorage.getItem('firebase_collection');
     
-    document.getElementById('password').addEventListener('keypress', function(e) {
+    if (savedConfig && savedCollection) {
+        try {
+            const config = JSON.parse(savedConfig);
+            
+            // Инициализируем Firebase автоматически
+            if (firebase.apps.length === 0) {
+                firebaseApp = firebase.initializeApp(config);
+            } else {
+                firebaseApp = firebase.app();
+            }
+            
+            firestoreDB = firebase.firestore();
+            firebaseCollection = savedCollection;
+            firebaseConnected = true;
+            
+            // Автоматически переходим к входу
+            document.getElementById('firebase-screen').classList.remove('active');
+            document.getElementById('login-screen').classList.add('active');
+            document.getElementById('password').focus();
+            
+            // Показываем статус подключения
+            const statusElement = document.getElementById('firebase-status');
+            statusElement.className = 'firebase-status connected';
+            statusElement.innerHTML = '<i class="fas fa-check-circle"></i> Автоматично підключено до Firebase';
+            
+            console.log('Автоматично підключено до Firebase');
+            
+        } catch (error) {
+            console.error('Помилка автоматичного підключення до Firebase:', error);
+            firebaseConnected = false;
+        }
+    }
+    
+    // Обновляем статус синхронизации
+    updateSyncStatus();
+    
+    // Настройка обработчиков событий
+    document.getElementById('password')?.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
             login();
         }
@@ -1379,18 +1611,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Инициализируем базу данных при загрузке
-    loadDatabase().then(db => {
-        database = db;
-        console.log('База даних завантажена');
-    }).catch(error => {
-        console.error('Помилка ініціалізації:', error);
-        database = initializeDatabase();
-    });
-    
-    updateSyncStatus();
+    // Запускаем автоочистку
     setInterval(checkAutoCleanup, 60000);
-    
-    // Автосинхронизация через 2 секунды после загрузки
-    setTimeout(autoSyncOnLoad, 2000);
 });

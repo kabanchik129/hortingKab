@@ -3,19 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Хортинг - Система управління гуртком</title>
+    <title>Хортинг - Система управління гуртком (Firebase)</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <style>
-        /* Основные стили будут в style.css, здесь только критичные */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; background: #1a1a2e; color: white; }
         .hidden { display: none !important; }
         .screen { min-height: 100vh; }
+        
+        /* Стили для экрана настройки Firebase */
+        .firebase-setup {
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .firebase-setup h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #3498db;
+        }
+        
+        .firebase-setup .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .firebase-setup label {
+            display: block;
+            margin-bottom: 8px;
+            color: #ecf0f1;
+        }
+        
+        .firebase-setup input, .firebase-setup textarea {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        
+        .firebase-setup textarea {
+            height: 150px;
+            resize: vertical;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(90deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(90deg, #2980b9, #3498db);
+            transform: translateY(-2px);
+        }
+        
+        .firebase-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(52, 152, 219, 0.1);
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .firebase-info h4 {
+            color: #3498db;
+            margin-bottom: 10px;
+        }
+        
+        .firebase-info ol {
+            padding-left: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .firebase-info li {
+            margin-bottom: 8px;
+            color: #bdc3c7;
+        }
+        
+        .firebase-status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .firebase-status.connected {
+            background: rgba(39, 174, 96, 0.1);
+            border: 1px solid #27ae60;
+            color: #27ae60;
+        }
+        
+        .firebase-status.disconnected {
+            background: rgba(231, 76, 60, 0.1);
+            border: 1px solid #e74c3c;
+            color: #e74c3c;
+        }
     </style>
 </head>
 <body>
+    <!-- ЭКРАН НАСТРОЙКИ FIREBASE -->
+    <div id="firebase-screen" class="screen active">
+        <div class="firebase-setup">
+            <h2><i class="fas fa-fire"></i> Налаштування Firebase</h2>
+            
+            <div class="firebase-info">
+                <h4>Як налаштувати Firebase:</h4>
+                <ol>
+                    <li>Зареєструйтесь на <a href="https://firebase.google.com/" target="_blank" style="color: #3498db;">firebase.google.com</a></li>
+                    <li>Створіть новий проект</li>
+                    <li>Додайте веб-додаток до проекту</li>
+                    <li>Скопіюйте конфігурацію Firebase</li>
+                    <li>Вставте її нижче</li>
+                </ol>
+            </div>
+            
+            <div class="form-group">
+                <label>Конфігурація Firebase:</label>
+                <textarea id="firebase-config" placeholder="Вставте сюди конфігурацію Firebase...
+{
+  apiKey: '...',
+  authDomain: '...',
+  projectId: '...',
+  storageBucket: '...',
+  messagingSenderId: '...',
+  appId: '...'
+}"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>Колекція Firestore (за замовчуванням: horting):</label>
+                <input type="text" id="firestore-collection" value="horting" placeholder="horting">
+            </div>
+            
+            <button onclick="initFirebase()" class="btn-primary">
+                <i class="fas fa-plug"></i> Підключити до Firebase
+            </button>
+            
+            <div id="firebase-status" class="firebase-status disconnected">
+                <i class="fas fa-exclamation-triangle"></i> Не підключено до Firebase
+            </div>
+            
+            <div style="margin-top: 30px; text-align: center;">
+                <button onclick="skipFirebase()" class="btn-secondary" style="background: rgba(255,255,255,0.1); color: #bdc3c7; padding: 10px 20px; border-radius: 6px; border: none; cursor: pointer;">
+                    <i class="fas fa-forward"></i> Пропустити (локальний режим)
+                </button>
+                <p style="margin-top: 10px; font-size: 0.9rem; color: #7f8c8d;">
+                    У локальному режимі дані зберігаються тільки у вашому браузері
+                </p>
+            </div>
+        </div>
+    </div>
+
     <!-- ЭКРАН ВХОДА -->
-    <div id="login-screen" class="screen active">
+    <div id="login-screen" class="screen">
         <div class="login-container">
             <div class="logo">
                 <div class="logo-icon"><i class="fas fa-shield-alt"></i></div>
@@ -71,6 +228,11 @@
             </div>
             
             <div class="header-right">
+                <div id="sync-indicator" style="display: flex; align-items: center; color: #7f8c8d;">
+                    <i class="fas fa-circle" style="font-size: 10px; margin-right: 5px;"></i>
+                    <span id="sync-text">Офлайн</span>
+                </div>
+                
                 <button id="absence-btn" class="btn-icon" onclick="showAbsenceModal()">
                     <i class="fas fa-calendar-times"></i>
                     <span>Відсутність</span>
@@ -392,23 +554,23 @@
             <div class="modal-body">
                 <div class="sync-options">
                     <div class="sync-option">
-                        <h4><i class="fas fa-cloud"></i> GitHub Gist</h4>
+                        <h4><i class="fas fa-fire"></i> Firebase Firestore</h4>
                         <div class="form-group">
-                            <label>GitHub Токен:</label>
-                            <input type="password" id="github-token" placeholder="ghp_xxxxxxxxxxxx">
-                            <small>Створіть токен на GitHub з правами gist</small>
+                            <label>Статус:</label>
+                            <div id="firebase-connection-status" style="padding: 10px; border-radius: 6px; background: rgba(231, 76, 60, 0.1); color: #e74c3c;">
+                                <i class="fas fa-exclamation-triangle"></i> Не підключено
+                            </div>
                         </div>
                         <div class="form-group">
-                            <label>Gist ID (не обов'язково):</label>
-                            <input type="text" id="gist-id" placeholder="aa1bb2cc3dd4ee5ff6">
-                            <small>Якщо вже є - введіть для завантаження існуючих даних</small>
+                            <label>Колекція Firestore:</label>
+                            <input type="text" id="firestore-collection-input" value="horting">
                         </div>
                         <div class="sync-buttons">
-                            <button onclick="saveToGitHub()" class="btn-primary">
-                                <i class="fas fa-upload"></i> Завантажити на GitHub
+                            <button onclick="saveToFirebase()" class="btn-primary">
+                                <i class="fas fa-upload"></i> Завантажити на Firebase
                             </button>
-                            <button onclick="loadFromGitHub()" class="btn-secondary">
-                                <i class="fas fa-download"></i> Завантажити з GitHub
+                            <button onclick="loadFromFirebase()" class="btn-secondary">
+                                <i class="fas fa-download"></i> Завантажити з Firebase
                             </button>
                         </div>
                     </div>
@@ -424,30 +586,17 @@
                             </button>
                         </div>
                     </div>
-                    
-                    <div class="sync-option">
-                        <h4><i class="fas fa-share-alt"></i> Спільна робота</h4>
-                        <div class="form-group">
-                            <label>Поділитися налаштуваннями:</label>
-                            <div style="display: flex; gap: 10px; margin-top: 10px;">
-                                <button onclick="copySettings()" class="btn-secondary">
-                                    <i class="fas fa-copy"></i> Копіювати налаштування
-                                </button>
-                                <button onclick="pasteSettings()" class="btn-secondary">
-                                    <i class="fas fa-paste"></i> Вставити налаштування
-                                </button>
-                            </div>
-                        </div>
-                    </div>
                 </div>
                 
                 <div class="sync-status" id="sync-status">
                     <p><i class="fas fa-info-circle"></i> Статус: <span id="sync-status-text">Локальне зберігання</span></p>
                     <p>Остання синхронізація: <span id="last-sync">Немає</span></p>
-                    <p>Gist ID: <span id="current-gist-id">Не вказано</span></p>
                 </div>
             </div>
             <div class="modal-footer">
+                <button onclick="showFirebaseConfig()" class="btn-secondary">
+                    <i class="fas fa-cog"></i> Налаштування Firebase
+                </button>
                 <button onclick="hideSyncModal()" class="btn-secondary">Закрити</button>
             </div>
         </div>
@@ -502,6 +651,6 @@
 
     <!-- Подключаем стили и скрипты -->
     <link rel="stylesheet" href="style.css">
-    <script src="script.js"></script>
+    <script src="script-firebase.js"></script>
 </body>
 </html>
