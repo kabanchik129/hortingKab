@@ -1,13 +1,12 @@
 // ============= СИСТЕМА ПАРОЛЕЙ =============
 
-// Прямая проверка паролей (без шифрования для простоты)
 const VALID_PASSWORDS = {
     // Младшие группы (просмотр)
     'mal1kab747': { type: 'junior', group: 'mal1', access: 'view', role: 'viewer', name: 'Молодша група 1' },
     'mal2kab353': { type: 'junior', group: 'mal2', access: 'view', role: 'viewer', name: 'Молодша група 2' },
     'mal3kab539': { type: 'junior', group: 'mal3', access: 'view', role: 'viewer', name: 'Молодша група 3 (Розвідка)' },
     
-    // Младшие группы (редактирование - командиры)
+    // Младшие группы (редактирование)
     'mal1kab747_kam': { type: 'junior', group: 'mal1', access: 'edit', role: 'commander', name: 'Молодша група 1' },
     'mal1kab747_zam': { type: 'junior', group: 'mal1', access: 'edit', role: 'deputy', name: 'Молодша група 1' },
     'mal2kab353_kam': { type: 'junior', group: 'mal2', access: 'edit', role: 'commander', name: 'Молодша група 2' },
@@ -20,7 +19,7 @@ const VALID_PASSWORDS = {
     'str2kab138': { type: 'senior', group: 'str2', access: 'view', role: 'viewer', name: 'Старша група 2' },
     'str3kab846': { type: 'senior', group: 'str3', access: 'view', role: 'viewer', name: 'Старша група 3 (Розвідка)' },
     
-    // Старшие группы (редактирование - командиры)
+    // Старшие группы (редактирование)
     'str1kab023_kam': { type: 'senior', group: 'str1', access: 'edit', role: 'commander', name: 'Старша група 1' },
     'str1kab023_zam': { type: 'senior', group: 'str1', access: 'edit', role: 'deputy', name: 'Старша група 1' },
     'str2kab138_kam': { type: 'senior', group: 'str2', access: 'edit', role: 'commander', name: 'Старша група 2' },
@@ -31,14 +30,14 @@ const VALID_PASSWORDS = {
     // Администратор
     'kyk4kab934': { type: 'admin', group: 'all', access: 'admin', role: 'admin', name: 'Адміністратор' },
     
-    // Родители (любой пароль начинающийся с Rod5kab)
+    // Родители
     'Rod5kab': { type: 'parent', group: 'all', access: 'view', role: 'parent', name: 'Батьки' }
 };
 
 function checkPassword(password) {
     password = password.trim();
     
-    // 1. Проверка пароля родителей (Rod5kabXXX)
+    // Проверка родительского доступа
     if (password.startsWith('Rod5kab') && password.length >= 8) {
         return {
             valid: true,
@@ -50,7 +49,7 @@ function checkPassword(password) {
         };
     }
     
-    // 2. Проверка точного совпадения пароля
+    // Проверка точного совпадения
     const userData = VALID_PASSWORDS[password];
     if (userData) {
         return {
@@ -63,22 +62,20 @@ function checkPassword(password) {
         };
     }
     
-    // 3. Пароль не найден
     return { valid: false };
 }
 
-// ============= СИСТЕМА ХРАНЕНИЯ ДАННЫХ =============
+// ============= СИСТЕМА ХРАНЕНИЯ =============
 
 function initializeDatabase() {
     const defaultDB = {
-        version: '3.0',
+        version: '4.0',
         lastUpdated: new Date().toISOString(),
         settings: {
             autoCleanup: true,
             cleanupTime: '23:59'
         },
         
-        // Группы (изначально пустые)
         groups: {
             mal1: { name: 'Молодша група 1', type: 'junior', members: [], lastUpdated: null },
             mal2: { name: 'Молодша група 2', type: 'junior', members: [], lastUpdated: null },
@@ -88,33 +85,20 @@ function initializeDatabase() {
             str3: { name: 'Старша група 3 (Розвідка)', type: 'senior', members: [], lastUpdated: null }
         },
         
-        // Объявления
         announcements: {
             global: [],
             group: {
-                mal1: [],
-                mal2: [],
-                mal3: [],
-                str1: [],
-                str2: [],
-                str3: []
+                mal1: [], mal2: [], mal3: [],
+                str1: [], str2: [], str3: []
             }
         },
         
-        // Задачи
         tasks: {
-            mal1: [],
-            mal2: [],
-            mal3: [],
-            str1: [],
-            str2: [],
-            str3: []
+            mal1: [], mal2: [], mal3: [],
+            str1: [], str2: [], str3: []
         },
         
-        // Отсутствующие
         absences: [],
-        
-        // Сообщения
         messages: []
     };
     
@@ -123,14 +107,12 @@ function initializeDatabase() {
 
 function loadDatabase() {
     const saved = localStorage.getItem('horting_database');
-    if (!saved) {
-        return initializeDatabase();
-    }
+    if (!saved) return initializeDatabase();
     
     try {
         return JSON.parse(saved);
     } catch (e) {
-        console.error('Помилка завантаження даних:', e);
+        console.error('Помилка завантаження:', e);
         return initializeDatabase();
     }
 }
@@ -140,7 +122,7 @@ function saveDatabase() {
         database.lastUpdated = new Date().toISOString();
         localStorage.setItem('horting_database', JSON.stringify(database));
     } catch (e) {
-        console.error('Помилка збереження даних:', e);
+        console.error('Помилка збереження:', e);
     }
 }
 
@@ -148,50 +130,214 @@ function saveDatabase() {
 
 let currentUser = null;
 let database = loadDatabase();
+let editMembersCache = [];
 
-// ============= ФУНКЦИИ ВХОДА/ВЫХОДА =============
+// ============= СИНХРОНИЗАЦИЯ =============
+
+const GITHUB_API = 'https://api.github.com';
+let githubToken = localStorage.getItem('github_token') || '';
+let gistId = localStorage.getItem('horting_gist_id') || '';
+let lastSync = localStorage.getItem('last_sync') || 'Немає';
+
+function updateSyncStatus() {
+    const statusElement = document.getElementById('sync-status-text');
+    const lastSyncElement = document.getElementById('last-sync');
+    
+    if (githubToken && gistId) {
+        statusElement.textContent = 'Синхронізовано з GitHub';
+        statusElement.style.color = '#27ae60';
+    } else if (githubToken) {
+        statusElement.textContent = 'GitHub підключено';
+        statusElement.style.color = '#3498db';
+    } else {
+        statusElement.textContent = 'Локальне зберігання';
+        statusElement.style.color = '#7f8c8d';
+    }
+    
+    lastSyncElement.textContent = lastSync;
+}
+
+async function saveToGitHub() {
+    const token = document.getElementById('github-token').value.trim() || githubToken;
+    const gistName = document.getElementById('gist-name').value.trim() || 'horting-data';
+    
+    if (!token) {
+        alert('Будь ласка, введіть GitHub токен');
+        return;
+    }
+    
+    const data = {
+        files: {
+            [gistName + '.json']: {
+                content: JSON.stringify(database, null, 2)
+            }
+        },
+        description: 'Хортинг - дані гуртка',
+        public: false
+    };
+    
+    try {
+        const url = gistId ? `${GITHUB_API}/gists/${gistId}` : `${GITHUB_API}/gists`;
+        const method = gistId ? 'PATCH' : 'POST';
+        
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Authorization': `token ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) throw new Error('Помилка запиту');
+        
+        const result = await response.json();
+        gistId = result.id;
+        githubToken = token;
+        
+        localStorage.setItem('github_token', token);
+        localStorage.setItem('horting_gist_id', gistId);
+        localStorage.setItem('last_sync', new Date().toLocaleString('uk-UA'));
+        
+        updateSyncStatus();
+        showNotification('Дані збережено на GitHub!');
+    } catch (error) {
+        alert('Помилка збереження на GitHub: ' + error.message);
+    }
+}
+
+async function loadFromGitHub() {
+    const token = document.getElementById('github-token').value.trim() || githubToken;
+    
+    if (!token) {
+        alert('Введіть GitHub токен');
+        return;
+    }
+    
+    if (!gistId) {
+        alert('Спочатку збережіть дані на GitHub');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${GITHUB_API}/gists/${gistId}`, {
+            headers: {
+                'Authorization': `token ${token}`
+            }
+        });
+        
+        if (!response.ok) throw new Error('Помилка завантаження');
+        
+        const result = await response.json();
+        const fileName = Object.keys(result.files)[0];
+        const content = result.files[fileName].content;
+        
+        const importedData = JSON.parse(content);
+        
+        if (confirm('Це перезапише поточні дані. Продовжити?')) {
+            database = importedData;
+            saveDatabase();
+            localStorage.setItem('last_sync', new Date().toLocaleString('uk-UA'));
+            
+            updateSyncStatus();
+            showNotification('Дані завантажено з GitHub!');
+            
+            if (currentUser) {
+                loadData();
+            }
+        }
+    } catch (error) {
+        alert('Помилка завантаження: ' + error.message);
+    }
+}
+
+function exportLocalData() {
+    const dataStr = JSON.stringify(database, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+    
+    const link = document.createElement('a');
+    link.href = dataUri;
+    link.download = `horting_backup_${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    
+    showNotification('Дані експортовано!');
+}
+
+function importLocalData() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    
+    input.onchange = function(e) {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        
+        reader.onload = function(event) {
+            try {
+                const importedData = JSON.parse(event.target.result);
+                
+                if (confirm('Це перезапише всі дані. Продовжити?')) {
+                    database = importedData;
+                    saveDatabase();
+                    showNotification('Дані імпортовано!');
+                    
+                    if (currentUser) {
+                        loadData();
+                    }
+                }
+            } catch (error) {
+                alert('Помилка при читанні файлу');
+            }
+        };
+        
+        reader.readAsText(file);
+    };
+    
+    input.click();
+}
+
+function showSyncModal() {
+    document.getElementById('github-token').value = githubToken;
+    document.getElementById('gist-name').value = 'horting-data';
+    updateSyncStatus();
+    document.getElementById('sync-modal').classList.remove('hidden');
+}
+
+function hideSyncModal() {
+    document.getElementById('sync-modal').classList.add('hidden');
+}
+
+// ============= ОСНОВНЫЕ ФУНКЦИИ =============
 
 function login() {
     const passwordInput = document.getElementById('password');
     const password = passwordInput.value;
     const errorElement = document.getElementById('login-error');
     
-    // Проверяем пароль
     const userInfo = checkPassword(password);
     
     if (!userInfo.valid) {
         errorElement.classList.remove('hidden');
         passwordInput.value = '';
         passwordInput.focus();
-        
-        // Вибрация при ошибке
         if (navigator.vibrate) navigator.vibrate(200);
         return;
     }
     
-    // Сохраняем данные пользователя
     currentUser = userInfo;
-    
-    // Очищаем поле пароля и ошибки
     passwordInput.value = '';
     errorElement.classList.add('hidden');
     
-    // Переключаем экраны
     document.getElementById('login-screen').classList.remove('active');
     document.getElementById('main-screen').classList.add('active');
     
-    // Настраиваем интерфейс
     setupInterface();
-    
-    // Загружаем данные
     loadData();
-    
-    // Показываем приветствие
     showNotification(`Вітаємо, ${userInfo.displayName}!`);
 }
 
 function logout() {
-    if (confirm('Ви впевнені, що хочете вийти?')) {
+    if (confirm('Вийти з системи?')) {
         currentUser = null;
         document.getElementById('main-screen').classList.remove('active');
         document.getElementById('login-screen').classList.add('active');
@@ -199,15 +345,11 @@ function logout() {
     }
 }
 
-// ============= НАСТРОЙКА ИНТЕРФЕЙСА =============
-
 function setupInterface() {
     if (!currentUser) return;
     
-    // Устанавливаем название группы
     document.getElementById('current-group').textContent = currentUser.displayName;
     
-    // Устанавливаем роль
     const roleElement = document.getElementById('current-role');
     switch(currentUser.role) {
         case 'commander': roleElement.textContent = 'Командир'; break;
@@ -217,7 +359,6 @@ function setupInterface() {
         default: roleElement.textContent = 'Переглядач';
     }
     
-    // Устанавливаем уровень доступа
     const accessElement = document.getElementById('current-access');
     switch(currentUser.access) {
         case 'edit': accessElement.textContent = 'Редагування'; break;
@@ -225,20 +366,15 @@ function setupInterface() {
         default: accessElement.textContent = 'Перегляд';
     }
     
-    // Показываем/скрываем кнопки
     const canEdit = currentUser.access === 'edit' || currentUser.access === 'admin';
     const isAdmin = currentUser.access === 'admin';
     const isParent = currentUser.type === 'parent';
     
-    // Кнопка админа
     document.getElementById('admin-btn').classList.toggle('hidden', !isAdmin);
-    
-    // Кнопки редактирования
     document.getElementById('edit-members-btn').classList.toggle('hidden', !canEdit);
     document.getElementById('add-announcement-btn').classList.toggle('hidden', !canEdit);
     document.getElementById('add-task-btn').classList.toggle('hidden', !canEdit);
     
-    // Для родителей
     if (isParent) {
         document.querySelector('.members-section').classList.add('hidden');
         document.querySelector('.tasks-section').classList.add('hidden');
@@ -248,8 +384,6 @@ function setupInterface() {
         document.getElementById('add-announcement-btn').classList.add('hidden');
     }
 }
-
-// ============= ЗАГРУЗКА ДАННЫХ =============
 
 function loadData() {
     if (!currentUser) return;
@@ -267,7 +401,6 @@ function loadData() {
 }
 
 function loadGroupData(groupId) {
-    // Участники
     const group = database.groups[groupId];
     if (group) {
         loadMembers(group.members);
@@ -276,13 +409,8 @@ function loadGroupData(groupId) {
             group.lastUpdated ? formatDate(group.lastUpdated) : 'Немає даних';
     }
     
-    // Объявления
     loadAnnouncements();
-    
-    // Задачи
     loadTasks();
-    
-    // Отсутствующие
     loadAbsences();
 }
 
@@ -319,19 +447,15 @@ function loadAnnouncements() {
     let announcements = [];
     
     if (currentUser.type === 'parent') {
-        // Для родителей только глобальные объявления
         announcements = database.announcements.global || [];
     } else if (currentUser.group && currentUser.group !== 'all') {
-        // Для групп: глобальные + групповые
         const global = database.announcements.global || [];
         const groupAnn = database.announcements.group[currentUser.group] || [];
         announcements = [...global, ...groupAnn];
     } else {
-        // Для админа все глобальные
         announcements = database.announcements.global || [];
     }
     
-    // Сортируем по дате
     announcements.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     
     if (announcements.length === 0) {
@@ -385,7 +509,6 @@ function loadTasks() {
     
     const tasks = database.tasks[currentUser.group] || [];
     
-    // Сортируем по приоритету
     tasks.sort((a, b) => {
         const priorityOrder = { high: 0, normal: 1, low: 2 };
         return priorityOrder[a.priority] - priorityOrder[b.priority];
@@ -472,8 +595,6 @@ function loadAbsences() {
 }
 
 // ============= УПРАВЛЕНИЕ УЧАСТНИКАМИ =============
-
-let editMembersCache = [];
 
 function toggleEditMembers() {
     const view = document.getElementById('members-view');
@@ -574,17 +695,14 @@ function reloadEditMembers() {
 }
 
 function saveMembers() {
-    // Фильтруем пустые записи
     const members = editMembersCache.filter(member => 
         member.callsign && member.name && member.role && member.rank
     );
     
-    // Сохраняем
     database.groups[currentUser.group].members = members;
     database.groups[currentUser.group].lastUpdated = new Date().toISOString();
     saveDatabase();
     
-    // Обновляем интерфейс
     loadMembers(members);
     toggleEditMembers();
     
@@ -594,7 +712,7 @@ function saveMembers() {
     showNotification('Склад групи збережено!');
 }
 
-// ============= УПРАВЛЕНИЕ ОБЪЯВЛЕНИЯМИ =============
+// ============= ОБЪЯВЛЕНИЯ =============
 
 function showAddAnnouncementModal() {
     const today = new Date().toISOString().split('T')[0];
@@ -628,7 +746,6 @@ function addAnnouncement() {
         createdBy: currentUser.group
     };
     
-    // Сохраняем
     if (announcement.type === 'global') {
         database.announcements.global.push(announcement);
     } else {
@@ -644,17 +761,14 @@ function addAnnouncement() {
 function deleteAnnouncement(announcementId) {
     if (!confirm('Видалити це оголошення?')) return;
     
-    // Ищем везде
     let found = false;
     
-    // В глобальных
     const globalIndex = database.announcements.global.findIndex(a => a.id === announcementId);
     if (globalIndex !== -1) {
         database.announcements.global.splice(globalIndex, 1);
         found = true;
     }
     
-    // В групповых
     if (!found) {
         for (const group in database.announcements.group) {
             const index = database.announcements.group[group].findIndex(a => a.id === announcementId);
@@ -673,7 +787,7 @@ function deleteAnnouncement(announcementId) {
     }
 }
 
-// ============= УПРАВЛЕНИЕ ЗАДАЧАМИ =============
+// ============= ЗАДАЧИ =============
 
 function showAddTaskModal() {
     const today = new Date().toISOString().split('T')[0];
@@ -842,7 +956,6 @@ function loadAdminData() {
     loadAllGroups();
     loadMessages();
     loadSettings();
-    updateBackupInfo();
 }
 
 function loadAllGroups() {
@@ -967,68 +1080,34 @@ function saveSettings() {
     showNotification('Налаштування збережено!');
 }
 
-function exportData() {
-    const dataStr = JSON.stringify(database, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
-    
-    const link = document.createElement('a');
-    link.href = dataUri;
-    link.download = `horting_backup_${new Date().toISOString().split('T')[0]}.json`;
-    link.click();
-    
-    localStorage.setItem('last_backup', new Date().toISOString());
-    updateBackupInfo();
-    showNotification('Дані експортовано!');
-}
+// ============= ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =============
 
-function importData() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    
-    input.onchange = function(e) {
-        const file = e.target.files[0];
-        const reader = new FileReader();
-        
-        reader.onload = function(event) {
-            try {
-                const importedData = JSON.parse(event.target.result);
-                
-                if (confirm('Це перезапише всі дані. Продовжити?')) {
-                    database = importedData;
-                    saveDatabase();
-                    showNotification('Дані імпортовано!');
-                    setTimeout(() => location.reload(), 1000);
-                }
-            } catch (error) {
-                alert('Помилка при читанні файлу');
-            }
-        };
-        
-        reader.readAsText(file);
-    };
-    
-    input.click();
-}
-
-function resetData() {
-    if (confirm('Видалити всі дані?')) {
-        localStorage.removeItem('horting_database');
-        database = initializeDatabase();
-        saveDatabase();
-        showNotification('Дані скинуті!');
-        setTimeout(() => location.reload(), 1000);
+function formatDate(dateString) {
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('uk-UA', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    } catch (e) {
+        return dateString;
     }
 }
 
-function updateBackupInfo() {
-    const lastBackup = localStorage.getItem('last_backup');
-    document.getElementById('last-backup').textContent = 
-        lastBackup ? formatDate(lastBackup) : 'Немає';
+function showNotification(message) {
+    const notification = document.createElement('div');
+    notification.className = 'notification';
+    notification.textContent = message;
     
-    const dataSize = JSON.stringify(database).length;
-    document.getElementById('data-size').textContent = 
-        Math.round(dataSize / 1024) + ' KB';
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'fadeOut 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
 }
 
 // ============= АВТООЧИСТКА =============
@@ -1038,11 +1117,8 @@ function checkAutoCleanup() {
     
     const now = new Date();
     const [hours, minutes] = (database.settings.cleanupTime || '23:59').split(':').map(Number);
-    const cleanupTime = new Date();
-    cleanupTime.setHours(hours, minutes, 0, 0);
     
-    if (now.getHours() === cleanupTime.getHours() && 
-        now.getMinutes() === cleanupTime.getMinutes()) {
+    if (now.getHours() === hours && now.getMinutes() === minutes) {
         performCleanup();
     }
 }
@@ -1084,76 +1160,6 @@ function performCleanup() {
     }
 }
 
-// ============= ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =============
-
-function formatDate(dateString) {
-    try {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('uk-UA', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    } catch (e) {
-        return dateString;
-    }
-}
-
-function showNotification(message) {
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: linear-gradient(90deg, #27ae60, #2ecc71);
-        color: white;
-        padding: 15px 25px;
-        border-radius: 8px;
-        z-index: 10000;
-        animation: slideIn 0.3s ease-out;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        max-width: 300px;
-    `;
-    notification.textContent = message;
-    
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.style.animation = 'fadeOut 0.3s ease-out';
-        setTimeout(() => notification.remove(), 300);
-    }, 3000);
-}
-
-// Добавляем стили для анимаций
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideIn {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-    
-    @keyframes fadeOut {
-        from { opacity: 1; }
-        to { opacity: 0; }
-    }
-    
-    .empty-message {
-        text-align: center;
-        padding: 40px 20px;
-        color: #95a5a6;
-        font-style: italic;
-    }
-`;
-document.head.appendChild(style);
-
 // ============= ИНИЦИАЛИЗАЦИЯ =============
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -1181,6 +1187,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Запускаем автоочистку каждую минуту
+    updateSyncStatus();
     setInterval(checkAutoCleanup, 60000);
 });

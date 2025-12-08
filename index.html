@@ -3,18 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Хортинг - Система управління</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Хортинг - Система управління гуртком</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Основные стили будут в style.css, здесь только критичные */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #1a1a2e; color: white; }
+        .hidden { display: none !important; }
+        .screen { min-height: 100vh; }
+    </style>
 </head>
 <body>
-    <!-- Экран входа -->
+    <!-- ЭКРАН ВХОДА -->
     <div id="login-screen" class="screen active">
         <div class="login-container">
             <div class="logo">
-                <div class="logo-icon">
-                    <i class="fas fa-shield-alt"></i>
-                </div>
+                <div class="logo-icon"><i class="fas fa-shield-alt"></i></div>
                 <h1>ХОРТИНГ</h1>
                 <p class="year">2025</p>
                 <p class="subtitle">Військовий гурток</p>
@@ -47,8 +51,8 @@
             </div>
         </div>
     </div>
-    
-    <!-- Основной интерфейс -->
+
+    <!-- ОСНОВНОЙ ИНТЕРФЕЙС -->
     <div id="main-screen" class="screen">
         <!-- Шапка -->
         <header class="main-header">
@@ -77,14 +81,18 @@
                     <span>Повідомлення</span>
                 </button>
                 
+                <button id="sync-btn" class="btn-icon" onclick="showSyncModal()">
+                    <i class="fas fa-sync-alt"></i>
+                    <span>Синхронізація</span>
+                </button>
+                
                 <button id="admin-btn" class="btn-admin hidden" onclick="showAdminPanel()">
                     <i class="fas fa-cog"></i>
                     <span>Адмін</span>
                 </button>
                 
                 <button onclick="logout()" class="btn-logout">
-                    <i class="fas fa-sign-out-alt"></i>
-                    Вийти
+                    <i class="fas fa-sign-out-alt"></i> Вийти
                 </button>
             </div>
         </header>
@@ -202,10 +210,10 @@
             </div>
         </main>
     </div>
+
+    <!-- МОДАЛЬНЫЕ ОКНА -->
     
-    <!-- Модальные окна -->
-    
-    <!-- Модальное окно отсутствия -->
+    <!-- Отсутствие -->
     <div id="absence-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
@@ -215,11 +223,11 @@
             <div class="modal-body">
                 <div class="form-group">
                     <label>Позивний:</label>
-                    <input type="text" id="absence-callsign" placeholder="Ваш позивний" maxlength="20">
+                    <input type="text" id="absence-callsign" placeholder="Ваш позивний">
                 </div>
                 <div class="form-group">
                     <label>Ім'я:</label>
-                    <input type="text" id="absence-name" placeholder="Ваше ім'я" maxlength="50">
+                    <input type="text" id="absence-name" placeholder="Ваше ім'я">
                 </div>
                 <div class="form-group">
                     <label>День:</label>
@@ -231,11 +239,11 @@
                 </div>
                 <div class="form-group">
                     <label>Дата:</label>
-                    <input type="date" id="absence-date" min="<?php echo date('Y-m-d'); ?>">
+                    <input type="date" id="absence-date">
                 </div>
                 <div class="form-group">
                     <label>Причина (необов'язково):</label>
-                    <textarea id="absence-reason" placeholder="Коротка причина відсутності..." rows="3"></textarea>
+                    <textarea id="absence-reason" placeholder="Коротка причина..." rows="3"></textarea>
                 </div>
             </div>
             <div class="modal-footer">
@@ -249,7 +257,7 @@
         </div>
     </div>
     
-    <!-- Модальное окно сообщений -->
+    <!-- Сообщения -->
     <div id="message-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
@@ -266,7 +274,7 @@
                 </div>
                 <div class="form-group">
                     <label>Тема:</label>
-                    <input type="text" id="message-subject" placeholder="Тема повідомлення" maxlength="100">
+                    <input type="text" id="message-subject" placeholder="Тема повідомлення">
                 </div>
                 <div class="form-group">
                     <label>Повідомлення:</label>
@@ -274,7 +282,7 @@
                 </div>
                 <div class="form-group">
                     <label>Ваш позивний:</label>
-                    <input type="text" id="message-from" placeholder="Ваш позивний" maxlength="20">
+                    <input type="text" id="message-from" placeholder="Ваш позивний">
                 </div>
             </div>
             <div class="modal-footer">
@@ -288,7 +296,7 @@
         </div>
     </div>
     
-    <!-- Модальное окно добавления объявления -->
+    <!-- Объявление -->
     <div id="announcement-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
@@ -311,7 +319,7 @@
                 </div>
                 <div class="form-group">
                     <label>Видалити автоматично:</label>
-                    <input type="date" id="announcement-expiry" min="<?php echo date('Y-m-d'); ?>">
+                    <input type="date" id="announcement-expiry">
                     <small class="hint">В 23:59 обраної дати оголошення буде видалено</small>
                 </div>
                 <div class="form-group">
@@ -333,7 +341,7 @@
         </div>
     </div>
     
-    <!-- Модальное окно добавления задачи -->
+    <!-- Задача -->
     <div id="task-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
@@ -355,11 +363,11 @@
                 </div>
                 <div class="form-group">
                     <label>Термін виконання:</label>
-                    <input type="date" id="task-deadline" min="<?php echo date('Y-m-d'); ?>">
+                    <input type="date" id="task-deadline">
                 </div>
                 <div class="form-group">
                     <label>Автоматичне видалення:</label>
-                    <input type="date" id="task-expiry" min="<?php echo date('Y-m-d'); ?>">
+                    <input type="date" id="task-expiry">
                     <small class="hint">В 23:59 обраної дати завдання буде видалено</small>
                 </div>
             </div>
@@ -370,6 +378,60 @@
                 <button onclick="hideTaskModal()" class="btn-secondary">
                     Скасувати
                 </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Синхронизация -->
+    <div id="sync-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-sync-alt"></i> Синхронізація даних</h3>
+                <button class="modal-close" onclick="hideSyncModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="sync-options">
+                    <div class="sync-option">
+                        <h4><i class="fas fa-cloud"></i> GitHub Gist</h4>
+                        <div class="form-group">
+                            <label>GitHub Токен:</label>
+                            <input type="password" id="github-token" placeholder="ghp_xxxxxxxxxxxx">
+                            <small>Створіть токен на GitHub з правами gist</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Назва Gist:</label>
+                            <input type="text" id="gist-name" value="horting-data">
+                        </div>
+                        <div class="sync-buttons">
+                            <button onclick="saveToGitHub()" class="btn-primary">
+                                <i class="fas fa-upload"></i> Завантажити на GitHub
+                            </button>
+                            <button onclick="loadFromGitHub()" class="btn-secondary">
+                                <i class="fas fa-download"></i> Завантажити з GitHub
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="sync-option">
+                        <h4><i class="fas fa-file-export"></i> Резервне копіювання</h4>
+                        <div class="backup-buttons">
+                            <button onclick="exportLocalData()" class="btn-primary">
+                                <i class="fas fa-download"></i> Експортувати дані
+                            </button>
+                            <button onclick="importLocalData()" class="btn-secondary">
+                                <i class="fas fa-upload"></i> Імпортувати дані
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="sync-status" id="sync-status">
+                    <p><i class="fas fa-info-circle"></i> Статус: <span id="sync-status-text">Локальне зберігання</span></p>
+                    <p>Остання синхронізація: <span id="last-sync">Немає</span></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="hideSyncModal()" class="btn-secondary">Закрити</button>
             </div>
         </div>
     </div>
@@ -386,7 +448,6 @@
                     <button class="tab-btn active" onclick="showAdminTab('groups')">Усі групи</button>
                     <button class="tab-btn" onclick="showAdminTab('messages')">Повідомлення</button>
                     <button class="tab-btn" onclick="showAdminTab('settings')">Налаштування</button>
-                    <button class="tab-btn" onclick="showAdminTab('backup')">Резервне копіювання</button>
                 </div>
                 
                 <div id="admin-groups" class="admin-tab active">
@@ -418,29 +479,12 @@
                         </button>
                     </div>
                 </div>
-                
-                <div id="admin-backup" class="admin-tab hidden">
-                    <h4>Резервне копіювання даних</h4>
-                    <div class="backup-actions">
-                        <button onclick="exportData()" class="btn-primary">
-                            <i class="fas fa-download"></i> Експортувати всі дані
-                        </button>
-                        <button onclick="importData()" class="btn-secondary">
-                            <i class="fas fa-upload"></i> Імпортувати дані
-                        </button>
-                        <button onclick="resetData()" class="btn-danger">
-                            <i class="fas fa-trash"></i> Скинути всі дані
-                        </button>
-                    </div>
-                    <div class="backup-info">
-                        <p>Останнє резервне копіювання: <span id="last-backup">Немає</span></p>
-                        <p>Розмір даних: <span id="data-size">0 KB</span></p>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
-    
+
+    <!-- Подключаем стили и скрипты -->
+    <link rel="stylesheet" href="style.css">
     <script src="script.js"></script>
 </body>
 </html>
