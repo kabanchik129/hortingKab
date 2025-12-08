@@ -6,7 +6,6 @@
     <title>Хортинг - Система управління</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="manifest" href="manifest.json">
 </head>
 <body>
     <!-- Экран входа -->
@@ -18,32 +17,27 @@
                 </div>
                 <h1>ХОРТИНГ</h1>
                 <p class="year">2025</p>
+                <p class="subtitle">Військовий гурток</p>
             </div>
             
             <div class="login-form">
-                <h2>Система управління гуртком</h2>
-                <p class="subtitle">Введіть пароль доступу</p>
+                <h2><i class="fas fa-lock"></i> Вхід до системи</h2>
+                <p class="login-instruction">Введіть пароль доступу</p>
                 
                 <div class="input-group">
                     <input type="password" id="password" placeholder="Пароль" autocomplete="off" autofocus>
-                    <button onclick="login()" class="btn-primary">
+                    <button onclick="login()" class="btn-login">
                         <i class="fas fa-sign-in-alt"></i> Увійти
                     </button>
                 </div>
                 
-                <div id="login-error" class="error-message hidden"></div>
+                <div id="login-error" class="error-message hidden">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>Невірний пароль</span>
+                </div>
                 
-                <div class="access-info">
-                    <div class="info-box">
-                        <h3><i class="fas fa-info-circle"></i> Формати паролів:</h3>
-                        <ul>
-                            <li><code>malXkabXXX</code> - Молодші групи (X - номер групи)</li>
-                            <li><code>strXkabXXX</code> - Старші групи</li>
-                            <li><code>..._kam/_zam</code> - Редагування</li>
-                            <li><code>Rod5kabXXX</code> - Батьки</li>
-                            <li><code>kyk4kab934</code> - Адміністратор</li>
-                        </ul>
-                    </div>
+                <div class="login-info">
+                    <p><i class="fas fa-info-circle"></i> Для доступу використовуйте пароль вашої групи</p>
                 </div>
             </div>
             
