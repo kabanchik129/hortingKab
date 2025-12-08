@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Хортинг - Вхід</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
+</head>
+<body class="login-page">
+    <div class="container">
+        <header>
+            <h1>ХОРТИНГ</h1>
+            <p class="subtitle">Військово-патріотичний гурток</p>
+        </header>
+
+        <main>
+            <div class="login-card">
+                <h2>Доступ до системи</h2>
+                <p class="hint">Введіть ваш пароль. Формат: mal1kab123_kam, str4kab456_zam, kyka7 (адмін)</p>
+                <div class="input-group">
+                    <input type="password" id="passwordInput" placeholder="Ваш пароль" autocomplete="off">
+                    <button id="loginBtn">Увійти</button>
+                </div>
+                <p id="errorMessage" class="error-message"></p>
+                <div class="password-examples">
+                    <p><strong>Приклади паролів (6 команд):</strong></p>
+                    <ul>
+                        <li>Адмін: <code>kyka7</code></li>
+                        <li>Ком. 1-ї (молодші): <code>mal1kab123_kam</code></li>
+                        <li>Боець 2-ї: <code>mal2kab777</code></li>
+                        <li>Ком. розвідки (3-я): <code>mal3kab001_kam</code></li>
+                        <li>Ком. 4-ї (старші): <code>str4kab888_kam</code></li>
+                        <li>Зам. 6-ї: <code>str6kab999_zam</code></li>
+                    </ul>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>© Хортинг. Тільки для авторизованих членів гуртка.</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

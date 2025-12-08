@@ -1,0 +1,329 @@
+/* Загальні стилі */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    background: linear-gradient(135deg, #0d1b2a 0%, #1b3a4b 100%);
+    color: #e0e1dd;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    flex: 1;
+}
+
+/* Сторінка входу */
+.login-page header {
+    text-align: center;
+    padding: 40px 0 20px;
+}
+
+.login-page h1 {
+    font-family: 'Roboto Slab', serif;
+    font-size: 4rem;
+    color: #ffd60a;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    letter-spacing: 2px;
+}
+
+.subtitle {
+    font-size: 1.2rem;
+    color: #adb5bd;
+    margin-top: 10px;
+}
+
+.login-card {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 40px;
+    max-width: 500px;
+    margin: 40px auto;
+    border: 1px solid rgba(255, 214, 10, 0.2);
+}
+
+.login-card h2 {
+    color: #ffd60a;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.hint {
+    color: #adb5bd;
+    margin-bottom: 25px;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.input-group input {
+    flex: 1;
+    padding: 15px;
+    border: 1px solid #415a77;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    font-size: 1rem;
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: #ffd60a;
+}
+
+button {
+    padding: 15px 30px;
+    background: #ffd60a;
+    color: #0d1b2a;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 1rem;
+}
+
+button:hover {
+    background: #ffc300;
+    transform: translateY(-2px);
+}
+
+.error-message {
+    color: #ff6b6b;
+    text-align: center;
+    min-height: 20px;
+    margin: 10px 0;
+}
+
+.password-examples {
+    margin-top: 30px;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+.password-examples ul {
+    margin-top: 10px;
+    padding-left: 20px;
+}
+
+.password-examples code {
+    background: rgba(255, 214, 10, 0.2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #ffd60a;
+}
+
+footer {
+    text-align: center;
+    padding: 20px;
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-top: auto;
+}
+
+/* Стилі для панелі адміна/командира */
+.dashboard header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 0;
+    border-bottom: 1px solid #415a77;
+    margin-bottom: 30px;
+}
+
+.user-info {
+    text-align: right;
+}
+
+.user-info p {
+    margin-bottom: 5px;
+}
+
+.logout-btn {
+    padding: 8px 16px;
+    background: transparent;
+    border: 1px solid #ff6b6b;
+    color: #ff6b6b;
+}
+
+.logout-btn:hover {
+    background: rgba(255, 107, 107, 0.1);
+}
+
+.teams-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 25px;
+    margin-bottom: 40px;
+}
+
+.team-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #415a77;
+    transition: all 0.3s;
+}
+
+.team-card:hover {
+    border-color: #ffd60a;
+    transform: translateY(-5px);
+}
+
+.team-card h3 {
+    color: #ffd60a;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #415a77;
+}
+
+.team-card.mal1 { border-left: 4px solid #ff6b6b; }
+.team-card.mal2 { border-left: 4px solid #4ecdc4; }
+.team-card.mal3 { border-left: 4px solid #1a936f; }
+.team-card.str4 { border-left: 4px solid #ff9e00; }
+.team-card.str5 { border-left: 4px solid #9d4edd; }
+.team-card.str6 { border-left: 4px solid #00bbf9; }
+
+.team-members {
+    margin-bottom: 20px;
+}
+
+.member-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.member-item:last-child {
+    border-bottom: none;
+}
+
+.role-badge {
+    font-size: 0.8rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background: #415a77;
+}
+
+.role-kam { background: #d00000; }
+.role-zam { background: #e85d04; }
+.role-admin { background: #ffd60a; color: #0d1b2a; }
+
+/* Стилі для сторінки команди */
+.team-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.section {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 30px;
+}
+
+.section h3 {
+    color: #ffd60a;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.add-btn {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.form-row input,
+.form-row select {
+    padding: 12px;
+    border: 1px solid #415a77;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.notification-item {
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    margin-bottom: 15px;
+    border-left: 4px solid #ffd60a;
+}
+
+.notification-item.team {
+    border-left-color: #4ecdc4;
+}
+
+.notification-date {
+    font-size: 0.8rem;
+    color: #adb5bd;
+    margin-top: 5px;
+}
+
+.absence-form {
+    margin-top: 20px;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+}
+
+.absence-form h4 {
+    margin-bottom: 15px;
+    color: #ffd60a;
+}
+
+.absence-item {
+    padding: 15px;
+    background: rgba(255, 107, 107, 0.1);
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border-left: 4px solid #ff6b6b;
+}
+
+.tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 30px;
+}
+
+.tab-btn {
+    padding: 12px 24px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid #415a77;
+    color: #adb5bd;
+}
+
+.tab-btn.active {
+    background: #ffd60a;
+    color: #0d1b2a;
+    border-color: #ffd60a;
+}

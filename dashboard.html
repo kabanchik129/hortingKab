@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Хортинг - Панель управління</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dashboard">
+    <div class="container">
+        <header>
+            <div>
+                <h1>Панель управління Хортинг</h1>
+                <p>Всі 6 команд системи</p>
+            </div>
+            <div class="user-info">
+                <p>Адміністратор <strong>kyka7</strong></p>
+                <button class="logout-btn" onclick="logout()">Вийти</button>
+            </div>
+        </header>
+
+        <main>
+            <div class="tabs">
+                <button class="tab-btn active" onclick="showTab('teams')">Команди</button>
+                <button class="tab-btn" onclick="showTab('global')">Загальні сповіщення</button>
+                <button class="tab-btn" onclick="showTab('admin')">Звернення до адміна</button>
+            </div>
+
+            <div id="teamsTab">
+                <div class="teams-grid" id="teamsContainer">
+                    <!-- Команды будут загружены через JS -->
+                </div>
+            </div>
+
+            <div id="globalTab" style="display: none;">
+                <div class="section">
+                    <h3>Загальні сповіщення</h3>
+                    <div id="globalNotifications"></div>
+                    <button class="add-btn" onclick="addGlobalNotification()">+ Додати сповіщення</button>
+                </div>
+            </div>
+
+            <div id="adminTab" style="display: none;">
+                <div class="section">
+                    <h3>Звернення до адміністратора</h3>
+                    <div id="adminNotifications"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // Проверка прав администратора
+        const user = checkAuth('admin');
+        if (!user) window.location.href = 'index.html';
+
+        // Загрузка данных
+        function loadDashboard() {
+            loadTeams();
+            loadGlobalNotifications();
+            loadAdminNotifications();
+        }
+
+        function loadTeams() {
+            const teams = TeamManager.getTeams();
+            const container = document.getElementById('teamsContainer');
+            
+            container.innerHTML = Object.entries(teams).map(([teamId, team]) => {
+                const teamConfig = CONFIG.teams[teamId];
+                if (!teamConfig) return '';
+                
+                const membersHtml = team.members.map(member => `
+                    <div class="member-item">
+                        <div>
+                            <strong>${member.callSign}</strong> (${member.name})
+                            <br><small>${member.rank}</small>
+                        </div>
+                        <span class="role-badge ${member.role === 'command' ? 'role-kam' : 
+                                              member.role === 'deputy' ? 'role-zam' : ''}">
+                            ${member.role === 'command' ? 'Командир' : 
+                             member.role === 'deputy' ? 'Заступник' : 'Боець'}
+                        </span>
+                    </div>
+                `).join('');
+                
+                const notificationsHtml = team.notifications.slice(-3).map(notif => `
+                    <div class="notification-item team">
+                        <strong>${notif.title}</strong>
+                        <p>${notif.message}</p>
+                        <div class="notification-date">
+                            ${formatDate(notif.date)} • ${notif.author}
+                        </div>
+                    </div>
+                `).join('');
+                
+                const absencesHtml = team.absences.map(abs => `
+                    <div class="absence-item">
+                        <strong>${abs.memberName}</strong> не буде ${abs.date}<br>
+                        <small>Причина: ${abs.reason}</small>
+                    </div>
+                `).join('');
+                
+                return `
+                    <div class="team-card ${teamConfig.color}">
+                        <h3>${teamConfig.name}</h3>
+                        <div class="team-members">
+                            <h4>Склад (${team.members.length})</h4>
+                            ${membersHtml || '<p>Немає членів</p>'}
+                        </div>
+                        <div>
+                            <h4>Останні сповіщення</h4>
+                            ${notificationsHtml || '<p>Немає сповіщень</p>'}
+                        </div>
+                        <div>
+                            <h4>Відсутності</h4>
+                            ${absencesHtml || '<p>Всі присутні</p>'}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function loadGlobalNotifications() {
+            const notifications = JSON.parse(localStorage.getItem('horting_global_notifications') || '[]');
+            const container = document.getElementById('globalNotifications');
+            
+            container.innerHTML = notifications.map(notif => `
+                <div class="notification-item">
+                    <strong>${notif.title}</strong>
+                    <p>${notif.message}</p>
+                    <div class="notification-date">
+                        ${formatDate(notif.date)} • ${notif.author}
+                        <button onclick="deleteGlobalNotification('${notif.id}')" style="margin-left: 10px; background: #ff6b6b; padding: 2px 8px; font-size: 0.8rem;">Видалити</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function loadAdminNotifications() {
+            const notifications = JSON.parse(localStorage.getItem('horting_admin_notifications') || '[]');
+            const container = document.getElementById('adminNotifications');
+            
+            container.innerHTML = notifications.map(notif => `
+                <div class="notification-item">
+                    <strong>Від: ${notif.fromTeam ? 'Команда ' + notif.fromTeam : 'Невідомо'}</strong>
+                    <p>${notif.message}</p>
+                    <div class="notification-date">
+                        ${formatDate(notif.date)}
+                        <button onclick="deleteAdminNotification('${notif.id}')" style="margin-left: 10px; background: #ff6b6b; padding: 2px 8px; font-size: 0.8rem;">Видалити</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addGlobalNotification() {
+            const title = prompt('Заголовок сповіщення:');
+            if (!title) return;
+            
+            const message = prompt('Текст сповіщення:');
+            if (!message) return;
+            
+            TeamManager.addGlobalNotification({
+                title: title,
+                message: message
+            }, 'Адміністратор');
+            
+            loadGlobalNotifications();
+            alert('Сповіщення додано!');
+        }
+
+        function deleteGlobalNotification(id) {
+            if (!confirm('Видалити це сповіщення?')) return;
+            
+            const notifications = JSON.parse(localStorage.getItem('horting_global_notifications') || '[]');
+            const filtered = notifications.filter(n => n.id !== id);
+            localStorage.setItem('horting_global_notifications', JSON.stringify(filtered));
+            loadGlobalNotifications();
+        }
+
+        function deleteAdminNotification(id) {
+            if (!confirm('Видалити це звернення?')) return;
+            
+            const notifications = JSON.parse(localStorage.getItem('horting_admin_notifications') || '[]');
+            const filtered = notifications.filter(n => n.id !== id);
+            localStorage.setItem('horting_admin_notifications', JSON.stringify(filtered));
+            loadAdminNotifications();
+        }
+
+        function showTab(tabName) {
+            // Скрыть все табы
+            document.querySelectorAll('[id$="Tab"]').forEach(tab => {
+                tab.style.display = 'none';
+            });
+            
+            // Убрать активный класс со всех кнопок
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Показать выбранный таб
+            document.getElementById(tabName + 'Tab').style.display = 'block';
+            
+            // Активировать кнопку
+            event.target.classList.add('active');
+        }
+
+        // Загрузка при открытии
+        document.addEventListener('DOMContentLoaded', loadDashboard);
+    </script>
+</body>
+</html>
