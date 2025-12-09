@@ -3,281 +3,263 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Хортинг - Вхід</title>
+    <title>Хортинг | Вхід</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="login-page">
-    <!-- Фоновые элементы -->
-    <div class="bg-pattern"></div>
-    <div class="bg-glow"></div>
+    <!-- Анимированный фон -->
+    <div class="particles" id="particles"></div>
+    <div class="gradient-bg"></div>
     
+    <!-- Контейнер -->
     <div class="container">
-        <!-- Выбор устройства -->
-        <div class="device-choice active" id="deviceChoice">
-            <div class="device-card glassmorphism">
-                <div class="logo-animation">
-                    <i class="fas fa-shield-alt"></i>
-                </div>
-                <h1>ХОРТИНГ</h1>
-                <p class="subtitle">Військово-патріотичний гурток</p>
-                <p class="choice-title">Оберіть пристрій:</p>
-                
-                <div class="device-options">
-                    <div class="device-option phone-option" onclick="selectDevice('phone')">
-                        <div class="device-icon">
-                            <i class="fas fa-mobile-alt"></i>
-                        </div>
-                        <h3>Телефон</h3>
-                        <p>Оптимізовано для мобільних пристроїв</p>
-                        <div class="device-features">
-                            <span><i class="fas fa-check-circle"></i> Зручне керування</span>
-                            <span><i class="fas fa-check-circle"></i> Адаптивний дизайн</span>
-                        </div>
+        <div class="login-container">
+            <!-- Логотип -->
+            <div class="logo-section">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-shield-alt"></i>
                     </div>
-                    
-                    <div class="device-option pc-option" onclick="selectDevice('pc')">
-                        <div class="device-icon">
-                            <i class="fas fa-desktop"></i>
-                        </div>
-                        <h3>Комп'ютер</h3>
-                        <p>Повноцінна версія для ПК</p>
-                        <div class="device-features">
-                            <span><i class="fas fa-check-circle"></i> Розширений функціонал</span>
-                            <span><i class="fas fa-check-circle"></i> Великий екран</span>
-                        </div>
-                    </div>
+                    <h1>Хортинг</h1>
                 </div>
-                
-                <div class="device-hint">
-                    <i class="fas fa-info-circle"></i>
-                    <p>Ви можете змінити пристрій пізніше в налаштуваннях</p>
-                </div>
+                <p class="tagline">Військово-патріотична спільнота</p>
             </div>
-        </div>
 
-        <!-- Форма входа (скрыта по умолчанию) -->
-        <div class="login-section" id="loginSection">
-            <header>
-                <div class="logo-header">
-                    <i class="fas fa-shield-alt"></i>
-                    <h1>ХОРТИНГ</h1>
-                </div>
-                <p class="subtitle">Військово-патріотичний гурток</p>
-                <div class="device-indicator" id="deviceIndicator">
-                    <i class="fas fa-mobile-alt"></i>
-                    <span>Мобільна версія</span>
-                    <button class="change-device-btn" onclick="changeDevice()">Змінити</button>
-                </div>
-            </header>
-
-            <main>
-                <div class="login-card glassmorphism">
-                    <h2><i class="fas fa-lock"></i> Доступ до системи</h2>
-                    <p class="hint">
-                        <i class="fas fa-key"></i>
-                        Введіть ваш пароль. Формат: mal1kab123_kam, str4kab456_zam, kyka7 (адмін)
-                    </p>
+            <!-- Форма входа -->
+            <div class="form-section">
+                <div class="form-card">
+                    <h2>Вхід до системи</h2>
                     
                     <div class="input-group">
-                        <div class="input-with-icon">
+                        <div class="input-wrapper">
                             <i class="fas fa-key"></i>
-                            <input type="password" class="enhanced-input" id="passwordInput" placeholder="Ваш пароль" autocomplete="off">
-                            <button class="show-password" id="showPasswordBtn">
+                            <input 
+                                type="password" 
+                                id="passwordInput" 
+                                placeholder="Введіть пароль доступу" 
+                                autocomplete="off"
+                                autofocus
+                            >
+                            <button class="toggle-password" id="togglePassword">
                                 <i class="fas fa-eye"></i>
                             </button>
                         </div>
-                        <button class="enhanced-btn login-btn" id="loginBtn">
-                            <i class="fas fa-sign-in-alt"></i>
-                            Увійти
-                        </button>
-                    </div>
-                    
-                    <p id="errorMessage" class="error-message"></p>
-                    
-                    <div class="password-examples glassmorphism">
-                        <h3><i class="fas fa-list"></i> Приклади паролів (6 команд):</h3>
-                        <div class="password-grid">
-                            <div class="password-item admin">
-                                <div class="password-header">
-                                    <i class="fas fa-crown"></i>
-                                    <span>Адмін</span>
-                                </div>
-                                <code>kyka7</code>
-                            </div>
-                            
-                            <div class="password-item">
-                                <div class="password-header">
-                                    <i class="fas fa-star"></i>
-                                    <span>Ком. 1-ї (молодші)</span>
-                                </div>
-                                <code>mal1kab123_kam</code>
-                            </div>
-                            
-                            <div class="password-item">
-                                <div class="password-header">
-                                    <i class="fas fa-user"></i>
-                                    <span>Боець 2-ї</span>
-                                </div>
-                                <code>mal2kab777</code>
-                            </div>
-                            
-                            <div class="password-item">
-                                <div class="password-header">
-                                    <i class="fas fa-binoculars"></i>
-                                    <span>Ком. розвідки (3-я)</span>
-                                </div>
-                                <code>mal3kab001_kam</code>
-                            </div>
-                            
-                            <div class="password-item">
-                                <div class="password-header">
-                                    <i class="fas fa-medal"></i>
-                                    <span>Ком. 4-ї (старші)</span>
-                                </div>
-                                <code>str4kab888_kam</code>
-                            </div>
-                            
-                            <div class="password-item">
-                                <div class="password-header">
-                                    <i class="fas fa-user-friends"></i>
-                                    <span>Зам. 6-ї</span>
-                                </div>
-                                <code>str6kab999_zam</code>
-                            </div>
-                            
-                            <div class="password-item">
-                                <div class="password-header">
-                                    <i class="fas fa-shield-alt"></i>
-                                    <span>Боець 5-ї</span>
-                                </div>
-                                <code>str5kab555</code>
-                            </div>
+                        
+                        <div class="form-actions">
+                            <button class="btn-primary" id="loginBtn">
+                                <i class="fas fa-sign-in-alt"></i>
+                                <span>Увійти</span>
+                            </button>
                         </div>
+                        
+                        <p id="errorMessage" class="error-message"></p>
                     </div>
-                    
-                    <!-- Быстрые пароли для разработки -->
-                    <div class="quick-login" id="quickLogin">
-                        <h4><i class="fas fa-bolt"></i> Швидкий вхід (для тесту):</h4>
-                        <div class="quick-buttons">
-                            <button class="quick-btn" onclick="quickLogin('kyka7')">Адмін</button>
-                            <button class="quick-btn" onclick="quickLogin('mal1kab123_kam')">Ком. 1</button>
-                            <button class="quick-btn" onclick="quickLogin('str4kab456_zam')">Зам. 4</button>
-                            <button class="quick-btn" onclick="quickLogin('mal2kab777')">Боець 2</button>
+
+                    <!-- Информация для админа -->
+                    <div class="admin-info">
+                        <div class="admin-card">
+                            <h3><i class="fas fa-info-circle"></i> Інформація для адміністратора</h3>
+                            <p>Пароль адміністратора: <code>kyka7</code></p>
+                            <p class="small-text">Для перевірки системи використовуйте цей пароль</p>
                         </div>
                     </div>
                 </div>
-            </main>
+            </div>
 
+            <!-- Футер -->
             <footer>
-                <p><i class="far fa-copyright"></i> Хортинг. Тільки для авторизованих членів гуртка.</p>
-                <p class="version">v2.0 • Адаптивна версія</p>
+                <p>© 2024 Хортинг. Лише для авторизованих користувачів</p>
+                <div class="footer-links">
+                    <a href="#" onclick="showDeviceSelect()"><i class="fas fa-mobile-alt"></i> Змінити пристрій</a>
+                    <a href="#" onclick="showHelp()"><i class="fas fa-question-circle"></i> Допомога</a>
+                </div>
             </footer>
+        </div>
+    </div>
+
+    <!-- Модальное окно выбора устройства -->
+    <div class="modal-overlay" id="deviceModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-mobile-alt"></i> Вибір пристрою</h3>
+                <button class="modal-close" onclick="closeModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="device-options">
+                    <div class="device-option selected" data-device="phone">
+                        <div class="device-icon">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <h4>Телефон</h4>
+                        <p>Оптимізовано для мобільних пристроїв</p>
+                    </div>
+                    
+                    <div class="device-option" data-device="pc">
+                        <div class="device-icon">
+                            <i class="fas fa-desktop"></i>
+                        </div>
+                        <h4>Комп'ютер</h4>
+                        <p>Повноцінна версія для ПК</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal()">Скасувати</button>
+                <button class="btn-primary" onclick="saveDevice()">Зберегти</button>
+            </div>
         </div>
     </div>
 
     <script src="script.js"></script>
     <script>
-        // Определение устройства по умолчанию
-        function detectDevice() {
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            return isMobile ? 'phone' : 'pc';
-        }
-        
-        let selectedDevice = localStorage.getItem('horting_device') || detectDevice();
-        
-        // Показать/скрыть выбор устройства
-        function showDeviceChoice() {
-            document.getElementById('deviceChoice').classList.add('active');
-            document.getElementById('loginSection').classList.remove('active');
-        }
-        
-        function hideDeviceChoice() {
-            document.getElementById('deviceChoice').classList.remove('active');
-            document.getElementById('loginSection').classList.add('active');
-            updateDeviceIndicator();
-        }
-        
-        // Выбор устройства
-        function selectDevice(device) {
-            selectedDevice = device;
-            localStorage.setItem('horting_device', device);
+        // Анимация частиц
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = window.innerWidth < 768 ? 15 : 30;
             
-            // Добавляем класс к body для стилизации
-            document.body.classList.remove('phone-mode', 'pc-mode');
-            document.body.classList.add(device + '-mode');
-            
-            // Показываем анимацию
-            const deviceChoice = document.getElementById('deviceChoice');
-            deviceChoice.classList.add('fade-out');
-            
-            setTimeout(() => {
-                hideDeviceChoice();
-                deviceChoice.classList.remove('fade-out');
-            }, 500);
-        }
-        
-        // Обновить индикатор устройства
-        function updateDeviceIndicator() {
-            const indicator = document.getElementById('deviceIndicator');
-            const icon = indicator.querySelector('i');
-            const text = indicator.querySelector('span');
-            
-            if (selectedDevice === 'phone') {
-                icon.className = 'fas fa-mobile-alt';
-                text.textContent = 'Мобільна версія';
-            } else {
-                icon.className = 'fas fa-desktop';
-                text.textContent = 'Комп\'ютерна версія';
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                
+                // Случайные параметры
+                const size = Math.random() * 4 + 1;
+                const posX = Math.random() * 100;
+                const posY = Math.random() * 100;
+                const duration = Math.random() * 20 + 10;
+                const delay = Math.random() * 5;
+                
+                particle.style.cssText = `
+                    width: ${size}px;
+                    height: ${size}px;
+                    left: ${posX}%;
+                    top: ${posY}%;
+                    animation-duration: ${duration}s;
+                    animation-delay: ${delay}s;
+                `;
+                
+                particlesContainer.appendChild(particle);
             }
-        }
-        
-        // Изменить устройство
-        function changeDevice() {
-            showDeviceChoice();
-        }
-        
-        // Быстрый вход (для тестирования)
-        function quickLogin(password) {
-            document.getElementById('passwordInput').value = password;
-            login();
         }
         
         // Показать/скрыть пароль
-        document.addEventListener('DOMContentLoaded', function() {
-            const showPasswordBtn = document.getElementById('showPasswordBtn');
+        document.getElementById('togglePassword').addEventListener('click', function() {
             const passwordInput = document.getElementById('passwordInput');
+            const icon = this.querySelector('i');
             
-            if (showPasswordBtn && passwordInput) {
-                showPasswordBtn.addEventListener('click', function() {
-                    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-                    passwordInput.setAttribute('type', type);
-                    this.querySelector('i').className = type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
-                });
-            }
-            
-            // Если устройство уже выбрано, показываем форму входа
-            if (localStorage.getItem('horting_device')) {
-                selectDevice(localStorage.getItem('horting_device'));
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.className = 'fas fa-eye-slash';
             } else {
-                // Показываем выбор устройства
-                showDeviceChoice();
-            }
-            
-            // Быстрый вход показываем только на localhost
-            const quickLoginDiv = document.getElementById('quickLogin');
-            if (quickLoginDiv && !window.location.href.includes('localhost') && !window.location.href.includes('127.0.0.1')) {
-                quickLoginDiv.style.display = 'none';
+                passwordInput.type = 'password';
+                icon.className = 'fas fa-eye';
             }
         });
         
-        // Экспортируем функции для глобального использования
-        window.selectDevice = selectDevice;
-        window.changeDevice = changeDevice;
-        window.quickLogin = quickLogin;
+        // Ввод пароля по Enter
+        document.getElementById('passwordInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                login();
+            }
+        });
+        
+        // Кнопка входа
+        document.getElementById('loginBtn').addEventListener('click', login);
+        
+        // Выбор устройства
+        let selectedDevice = localStorage.getItem('horting_device') || 'phone';
+        
+        function showDeviceSelect() {
+            document.getElementById('deviceModal').classList.add('active');
+            
+            // Сброс выбора
+            document.querySelectorAll('.device-option').forEach(option => {
+                option.classList.remove('selected');
+                if (option.dataset.device === selectedDevice) {
+                    option.classList.add('selected');
+                }
+            });
+        }
+        
+        function closeModal() {
+            document.getElementById('deviceModal').classList.remove('active');
+        }
+        
+        document.querySelectorAll('.device-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.device-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                this.classList.add('selected');
+                selectedDevice = this.dataset.device;
+            });
+        });
+        
+        function saveDevice() {
+            localStorage.setItem('horting_device', selectedDevice);
+            closeModal();
+            
+            // Показать уведомление
+            showNotification(`Пристрій змінено на: ${selectedDevice === 'phone' ? 'Мобільний' : 'Комп\'ютер'}`);
+        }
+        
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.innerHTML = `
+                <i class="fas fa-check-circle"></i>
+                <span>${message}</span>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.classList.add('show');
+            }, 10);
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+        
+        function showHelp() {
+            alert("Для входу використовуйте пароль, отриманий від командира.\nАдміністратор: kyka7");
+        }
+        
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', function() {
+            createParticles();
+            
+            // Автофокус на поле ввода
+            setTimeout(() => {
+                document.getElementById('passwordInput').focus();
+            }, 300);
+            
+            // Проверяем, авторизован ли пользователь
+            const userData = JSON.parse(sessionStorage.getItem('horting_user'));
+            if (userData) {
+                if (userData.role === 'admin') {
+                    window.location.href = 'dashboard.html';
+                } else {
+                    window.location.href = 'team.html';
+                }
+            }
+        });
+        
+        // Закрытие модального окна по клику на оверлей
+        document.getElementById('deviceModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
     </script>
 </body>
 </html>
