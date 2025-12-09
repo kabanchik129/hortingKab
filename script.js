@@ -754,5 +754,462 @@ footer {
     .tab-btn {
         padding: 10px 16px;
         font-size: 0.9rem;
+        // Конфигурация системы
+const CONFIG = {
+    teams: {
+        1: { name: "1-ша команда (молодша)", color: "team-red", type: "mal" },
+        2: { name: "2-га команда (молодша)", color: "team-blue", type: "mal" },
+        3: { name: "3-тя команда (розвідка)", color: "team-green", type: "mal" },
+        4: { name: "4-та команда (старша)", color: "team-yellow", type: "str" },
+        5: { name: "5-та команда (старша)", color: "team-purple", type: "str" },
+        6: { name: "6-та команда (старша)", color: "team-orange", type: "str" }
+    },
+    trainingDays: ['вівторок', 'четвер', 'субота'],
+    trainingTime: '18:00'
+};
+
+// Менеджер команд
+const TeamManager = {
+    init() {
+        // Инициализация хранилища для команд
+        for (let i = 1; i <= 6; i++) {
+            if (!localStorage.getItem(`horting_team_${i}`)) {
+                const defaultTeam = {
+                    id: i,
+                    name: CONFIG.teams[i].name,
+                    members: [],
+                    notifications: [],
+                    tasks: [],
+                    absences: []
+                };
+                localStorage.setItem(`horting_team_${i}`, JSON.stringify(defaultTeam));
+            }
+        }
+    },
+
+    getTeam(teamId) {
+        const team = localStorage.getItem(`horting_team_${teamId}`);
+        return team ? JSON.parse(team) : null;
+    },
+
+    getTeams() {
+        const teams = {};
+        for (let i = 1; i <= 6; i++) {
+            teams[i] = this.getTeam(i);
+        }
+        return teams;
+    },
+
+    saveTeam(teamId, teamData) {
+        localStorage.setItem(`horting_team_${teamId}`, JSON.stringify(teamData));
+    },
+
+    addMember(teamId, memberData) {
+        const team = this.getTeam(teamId);
+        if (!team) return false;
+
+        const newMember = {
+            id: Date.now().toString(),
+            name: memberData.name,
+            callSign: memberData.callSign,
+            rank: memberData.rank,
+            role: memberData.role || 'soldier',
+            dateAdded: new Date().toISOString()
+        };
+
+        team.members.push(newMember);
+        this.saveTeam(teamId, team);
+        return true;
+    },
+
+    removeMember(teamId, memberId) {
+        const team = this.getTeam(teamId);
+        if (!team) return false;
+
+        team.members = team.members.filter(m => m.id !== memberId);
+        this.saveTeam(teamId, team);
+        return true;
+    },
+
+    addTeamNotification(teamId, notificationData, author = 'Система') {
+        const team = this.getTeam(teamId);
+        if (!team) return false;
+
+        const newNotification = {
+            id: Date.now().toString(),
+            title: notificationData.title,
+            message: notificationData.message,
+            date: new Date().toISOString(),
+            author: author
+        };
+
+        team.notifications.push(newNotification);
+        this.saveTeam(teamId, team);
+        return true;
+    },
+
+    addTask(teamId, taskData) {
+        const team = this.getTeam(teamId);
+        if (!team) return false;
+
+        const newTask = {
+            id: Date.now().toString(),
+            title: taskData.title,
+            description: taskData.description,
+            date: new Date().toISOString(),
+            completed: false
+        };
+
+        team.tasks.push(newTask);
+        this.saveTeam(teamId, team);
+        return true;
+    },
+
+    addAbsence(teamId, absenceData) {
+        const team = this.getTeam(teamId);
+        if (!team) return false;
+
+        const newAbsence = {
+            id: Date.now().toString(),
+            memberName: absenceData.memberName,
+            date: absenceData.date,
+            reason: absenceData.reason,
+            reportedDate: new Date().toISOString()
+        };
+
+        team.absences.push(newAbsence);
+        this.saveTeam(teamId, team);
+        return true;
+    },
+
+    addGlobalNotification(notificationData, author = 'Адміністратор') {
+        const notifications = JSON.parse(localStorage.getItem('horting_global_notifications') || '[]');
+        
+        const newNotification = {
+            id: Date.now().toString(),
+            title: notificationData.title,
+            message: notificationData.message,
+            date: new Date().toISOString(),
+            author: author,
+            targetTeams: notificationData.targetTeams || null
+        };
+
+        notifications.push(newNotification);
+        localStorage.setItem('horting_global_notifications', JSON.stringify(notifications));
+        return true;
+    }
+};
+
+// Парсинг пароля
+function parsePassword(password) {
+    password = password.trim().toLowerCase();
+    
+    // Админский пароль
+    if (password === 'kyka7') {
+        return {
+            role: 'admin',
+            teamId: 0,
+            isCommander: true,
+            isDeputy: true
+        };
+    }
+    
+    // Проверка формата пароля
+    const pattern = /^(mal|str)([1-6])kab(\d{3})(?:_(kam|zam))?$/;
+    const match = password.match(pattern);
+    
+    if (!match) return null;
+    
+    const [, teamType, teamNumber, code, role] = match;
+    const teamId = parseInt(teamNumber);
+    
+    return {
+        role: 'user',
+        teamId: teamId,
+        teamType: teamType,
+        isCommander: role === 'kam',
+        isDeputy: role === 'zam'
+    };
+}
+
+// Авторизация
+function login() {
+    const password = document.getElementById('passwordInput').value.trim();
+    const errorElement = document.getElementById('errorMessage');
+    
+    if (!password) {
+        errorElement.textContent = 'Будь ласка, введіть пароль!';
+        errorElement.style.display = 'block';
+        return;
+    }
+    
+    const userData = parsePassword(password);
+    
+    if (!userData) {
+        errorElement.textContent = 'Невірний пароль! Перевірте формат.';
+        errorElement.style.display = 'block';
+        return;
+    }
+    
+    // Сохраняем данные пользователя
+    sessionStorage.setItem('horting_user', JSON.stringify(userData));
+    
+    // Перенаправляем в зависимости от роли
+    if (userData.role === 'admin') {
+        window.location.href = 'dashboard.html';
+    } else {
+        window.location.href = 'team.html';
+    }
+}
+
+// Проверка авторизации
+function checkAuth(requiredRole = null) {
+    const userData = JSON.parse(sessionStorage.getItem('horting_user') || 'null');
+    
+    if (!userData) {
+        if (window.location.pathname.includes('index.html')) {
+            return null;
+        }
+        window.location.href = 'index.html';
+        return null;
+    }
+    
+    if (requiredRole && userData.role !== requiredRole) {
+        if (requiredRole === 'admin' && userData.role !== 'admin') {
+            window.location.href = 'team.html';
+            return null;
+        }
+        if (requiredRole === 'user' && userData.role === 'admin') {
+            window.location.href = 'dashboard.html';
+            return null;
+        }
+    }
+    
+    return userData;
+}
+
+// Выход из системы
+function logout() {
+    sessionStorage.removeItem('horting_user');
+    sessionStorage.removeItem('horting_admin_view');
+    sessionStorage.removeItem('horting_view_team');
+    window.location.href = 'index.html';
+}
+
+// Функции для тренировок
+function getNextTrainings(count = 3) {
+    const trainings = [];
+    const today = new Date();
+    
+    for (let i = 0; i < 14; i++) {
+        const date = new Date(today);
+        date.setDate(today.getDate() + i);
+        
+        const dayName = getDayName(date.getDay());
+        
+        if (CONFIG.trainingDays.includes(dayName)) {
+            trainings.push({
+                date: formatDate(date),
+                day: dayName,
+                time: CONFIG.trainingTime,
+                isToday: i === 0
+            });
+            
+            if (trainings.length >= count) break;
+        }
+    }
+    
+    return trainings;
+}
+
+function getDayName(dayIndex) {
+    const days = ['неділя', 'понеділок', 'вівторок', 'середа', 'четвер', 'п\'ятниця', 'субота'];
+    return days[dayIndex];
+}
+
+function formatDate(dateString) {
+    if (!dateString) return '';
+    
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+    
+    return date.toLocaleDateString('uk-UA', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    });
+}
+
+// Проверка дня тренировки
+function isTrainingDay(date) {
+    const dayName = getDayName(date.getDay());
+    return CONFIG.trainingDays.includes(dayName);
+}
+
+// Отправка сообщения админу
+function sendToAdmin(message, fromTeam) {
+    const notifications = JSON.parse(localStorage.getItem('horting_admin_notifications') || '[]');
+    
+    const newNotification = {
+        id: Date.now().toString(),
+        message: message,
+        date: new Date().toISOString(),
+        fromTeam: fromTeam,
+        read: false
+    };
+    
+    notifications.push(newNotification);
+    localStorage.setItem('horting_admin_notifications', JSON.stringify(notifications));
+}
+
+// Модальное окно
+const Modal = {
+    show(title, content, buttons = []) {
+        return new Promise((resolve) => {
+            // Создаем оверлей
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            
+            // Создаем модальное окно
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            
+            // Заголовок
+            const titleElement = document.createElement('h3');
+            titleElement.textContent = title;
+            modal.appendChild(titleElement);
+            
+            // Контент
+            const contentElement = document.createElement('div');
+            contentElement.innerHTML = content;
+            modal.appendChild(contentElement);
+            
+            // Кнопки
+            if (buttons.length > 0) {
+                const actions = document.createElement('div');
+                actions.className = 'modal-actions';
+                
+                buttons.forEach(button => {
+                    const btn = document.createElement('button');
+                    btn.className = `enhanced-btn ${button.class || ''}`;
+                    btn.textContent = button.text;
+                    btn.onclick = () => {
+                        document.body.removeChild(overlay);
+                        resolve(button.value);
+                    };
+                    actions.appendChild(btn);
+                });
+                
+                modal.appendChild(actions);
+            }
+            
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+            
+            // Закрытие по клику на оверлей
+            overlay.onclick = (e) => {
+                if (e.target === overlay) {
+                    document.body.removeChild(overlay);
+                    resolve(null);
+                }
+            };
+        });
+    },
+
+    showForm(title, fields) {
+        return new Promise((resolve) => {
+            let formHTML = '';
+            
+            fields.forEach(field => {
+                formHTML += `
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; color: #e0e1dd;">
+                            ${field.label}
+                        </label>
+                `;
+                
+                if (field.type === 'textarea') {
+                    formHTML += `
+                        <textarea class="enhanced-textarea" 
+                                  name="${field.name}" 
+                                  placeholder="${field.placeholder || ''}"
+                                  rows="${field.rows || 3}"
+                                  ${field.required ? 'required' : ''}
+                                  style="width: 100%;">${field.value || ''}</textarea>
+                    `;
+                } else if (field.type === 'select') {
+                    formHTML += `
+                        <select class="enhanced-select" 
+                                name="${field.name}" 
+                                ${field.required ? 'required' : ''}
+                                style="width: 100%;">
+                    `;
+                    
+                    field.options.forEach(option => {
+                        formHTML += `<option value="${option.value}">${option.text}</option>`;
+                    });
+                    
+                    formHTML += `</select>`;
+                } else {
+                    formHTML += `
+                        <input type="${field.type || 'text'}" 
+                               class="enhanced-input" 
+                               name="${field.name}" 
+                               placeholder="${field.placeholder || ''}"
+                               value="${field.value || ''}"
+                               ${field.required ? 'required' : ''}
+                               style="width: 100%;">
+                    `;
+                }
+                
+                formHTML += `</div>`;
+            });
+            
+            this.show(title, formHTML, [
+                { text: 'Скасувати', class: 'secondary', value: null },
+                { text: 'Зберегти', class: '', value: 'submit' }
+            ]).then(result => {
+                if (result === 'submit') {
+                    const formData = {};
+                    fields.forEach(field => {
+                        const input = document.querySelector(`[name="${field.name}"]`);
+                        if (input) formData[field.name] = input.value;
+                    });
+                    resolve(formData);
+                } else {
+                    resolve(null);
+                }
+            });
+        });
+    }
+};
+
+// Выход из режима просмотра админа
+function exitViewMode() {
+    sessionStorage.removeItem('horting_admin_view');
+    sessionStorage.removeItem('horting_view_team');
+    window.location.href = 'dashboard.html';
+}
+
+// Инициализация при загрузке
+document.addEventListener('DOMContentLoaded', () => {
+    // Инициализируем хранилище команд
+    TeamManager.init();
+    
+    // Для страницы входа
+    if (document.getElementById('loginBtn')) {
+        document.getElementById('loginBtn').addEventListener('click', login);
+        document.getElementById('passwordInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') login();
+        });
+        
+        // Фокус на поле ввода
+        document.getElementById('passwordInput').focus();
+        
+        // Автоматический вход для тестирования (удалить в продакшене)
+        // document.getElementById('passwordInput').value = 'kyka7';
+        // login();
+    }
+});
     }
 }
