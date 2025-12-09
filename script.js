@@ -1,537 +1,758 @@
-// Конфигурация системы
-const CONFIG = {
-    adminPassword: 'kyka7',
-    teams: {
-        1: { name: '1-ша команда (молодша)', type: 'mal', color: 'mal1' },
-        2: { name: '2-га команда (молодша)', type: 'mal', color: 'mal2' },
-        3: { name: '3-тя команда (розвідка)', type: 'mal', color: 'mal3' },
-        4: { name: '4-та команда (старша)', type: 'str', color: 'str4' },
-        5: { name: '5-та команда (старша)', type: 'str', color: 'str5' },
-        6: { name: '6-та команда (старша)', type: 'str', color: 'str6' }
-    },
-    trainingDays: ['понеділок', 'середа', 'субота']
-};
+/* Основные переменные */
+:root {
+    --primary: #ffd60a;
+    --primary-dark: #ffc300;
+    --secondary: #415a77;
+    --accent: #9d4edd;
+    --danger: #ff6b6b;
+    --success: #1a936f;
+    --info: #00bbf9;
+    --dark: #0d1b2a;
+    --darker: #0a141f;
+    --light: #e0e1dd;
+    --gray: #adb5bd;
+}
 
-// Инициализация хранилища
-function initStorage() {
-    if (!localStorage.getItem('horting_teams')) {
-        const defaultTeams = {};
-        
-        // Создаем 6 команд с тестовыми данными
-        for (let teamId = 1; teamId <= 6; teamId++) {
-            const teamType = teamId <= 3 ? 'mal' : 'str';
-            let teamName = '';
-            
-            if (teamId <= 3) {
-                teamName = `${teamId}-ша команда (молодша)`;
-                if (teamId === 3) teamName = '3-тя команда (розвідка)';
-            } else {
-                teamName = `${teamId}-та команда (старша)`;
-            }
-            
-            defaultTeams[teamId] = {
-                members: [
-                    {
-                        id: '1',
-                        name: 'Командир Командиров',
-                        callSign: 'Командир',
-                        rank: 'Старший сержант',
-                        role: 'command'
-                    },
-                    {
-                        id: '2', 
-                        name: 'Заступник Заступників',
-                        callSign: 'Заступник',
-                        rank: 'Сержант',
-                        role: 'deputy'
-                    }
-                ],
-                notifications: [
-                    {
-                        id: '1',
-                        title: 'Ласкаво просимо!',
-                        message: 'Це ваша командна сторінка. Тут будуть всі сповіщення та завдання.',
-                        date: new Date().toISOString(),
-                        author: 'Система'
-                    }
-                ],
-                tasks: [
-                    {
-                        id: '1',
-                        title: 'Знайомство з системою',
-                        description: 'Ознайомитися з усіма функціями сайту',
-                        date: new Date().toISOString(),
-                        completed: false
-                    }
-                ],
-                absences: []
-            };
-        }
-        
-        localStorage.setItem('horting_teams', JSON.stringify(defaultTeams));
-        localStorage.setItem('horting_admin_notifications', JSON.stringify([
-            {
-                id: '1',
-                date: new Date().toISOString(),
-                message: '[ПИТАННЯ] Як додати нового члена команди?',
-                fromTeam: '1',
-                read: false
-            }
-        ]));
-        localStorage.setItem('horting_global_notifications', JSON.stringify([
-            {
-                id: '1',
-                title: 'Початок роботи системи',
-                message: 'Вітаємо у системі Хортинг! Сайт розпочав роботу.',
-                date: new Date().toISOString(),
-                author: 'Адміністратор'
-            }
-        ]));
+/* Сброс и базовые стили */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    background: linear-gradient(135deg, var(--darker) 0%, var(--dark) 100%);
+    color: var(--light);
+    min-height: 100vh;
+    line-height: 1.6;
+}
+
+.login-page {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%230d1b2a"/><path d="M0,50 Q25,40 50,50 T100,50" stroke="%23ffd60a" fill="none" opacity="0.1"/></svg>');
+}
+
+/* Контейнер */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    width: 100%;
+}
+
+/* Шапка страницы */
+header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding-top: 20px;
+}
+
+.login-page header {
+    padding-top: 50px;
+}
+
+header h1 {
+    font-family: 'Roboto Slab', serif;
+    font-size: 4rem;
+    background: linear-gradient(45deg, var(--primary), var(--accent));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin-bottom: 10px;
+    text-shadow: 0 2px 10px rgba(255, 214, 10, 0.3);
+}
+
+.subtitle {
+    font-size: 1.2rem;
+    color: var(--gray);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+/* Карточка входа */
+.login-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
+    padding: 40px;
+    border: 1px solid var(--secondary);
+    backdrop-filter: blur(10px);
+    max-width: 600px;
+    margin: 40px auto;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.login-card h2 {
+    color: var(--primary);
+    margin-bottom: 20px;
+    font-size: 2rem;
+}
+
+.hint {
+    color: var(--gray);
+    margin-bottom: 30px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.input-group {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+/* Улучшенные поля ввода */
+.enhanced-input {
+    padding: 16px 20px;
+    border: 2px solid var(--secondary);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--light);
+    font-size: 16px;
+    transition: all 0.3s;
+    width: 100%;
+    font-family: 'Roboto', sans-serif;
+}
+
+.enhanced-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 0 0 4px rgba(255, 214, 10, 0.15);
+    transform: translateY(-2px);
+}
+
+.enhanced-select {
+    padding: 16px 20px;
+    border: 2px solid var(--secondary);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--light);
+    font-size: 16px;
+    transition: all 0.3s;
+    width: 100%;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 20px center;
+    background-size: 20px;
+    font-family: 'Roboto', sans-serif;
+}
+
+.enhanced-select:focus {
+    outline: none;
+    border-color: var(--primary);
+    background-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 0 0 4px rgba(255, 214, 10, 0.15);
+}
+
+.enhanced-textarea {
+    padding: 16px 20px;
+    border: 2px solid var(--secondary);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--light);
+    font-size: 16px;
+    transition: all 0.3s;
+    width: 100%;
+    min-height: 120px;
+    resize: vertical;
+    line-height: 1.6;
+    font-family: 'Roboto', sans-serif;
+}
+
+.enhanced-textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 0 0 4px rgba(255, 214, 10, 0.15);
+}
+
+/* Кнопки */
+.enhanced-btn {
+    padding: 16px 32px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: var(--dark);
+    border: none;
+    border-radius: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 16px;
+    text-align: center;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.enhanced-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 25px rgba(255, 214, 10, 0.25);
+}
+
+.enhanced-btn:active {
+    transform: translateY(-1px);
+}
+
+.enhanced-btn.secondary {
+    background: linear-gradient(135deg, var(--secondary) 0%, #1b3a4b 100%);
+    color: var(--light);
+}
+
+.enhanced-btn.secondary:hover {
+    box-shadow: 0 12px 25px rgba(65, 90, 119, 0.25);
+}
+
+.enhanced-btn.danger {
+    background: linear-gradient(135deg, var(--danger) 0%, #e85d04 100%);
+    color: white;
+}
+
+.enhanced-btn.danger:hover {
+    box-shadow: 0 12px 25px rgba(255, 107, 107, 0.25);
+}
+
+/* Примеры паролей */
+.password-examples {
+    margin-top: 30px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    border-left: 4px solid var(--primary);
+}
+
+.password-examples p {
+    margin-bottom: 15px;
+    color: var(--primary);
+}
+
+.password-examples ul {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 10px;
+}
+
+.password-examples li {
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+.password-examples code {
+    background: rgba(255, 214, 10, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--primary);
+    font-family: monospace;
+}
+
+/* Сообщение об ошибке */
+.error-message {
+    color: var(--danger);
+    text-align: center;
+    padding: 10px;
+    background: rgba(255, 107, 107, 0.1);
+    border-radius: 8px;
+    border: 1px solid var(--danger);
+    margin: 15px 0;
+    display: none;
+}
+
+/* Шапка команды */
+.team-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 25px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 16px;
+    margin-bottom: 30px;
+    border: 1px solid var(--secondary);
+}
+
+.team-header h1 {
+    font-size: 2.5rem;
+    color: var(--primary);
+    font-family: 'Roboto Slab', serif;
+}
+
+.user-info {
+    text-align: right;
+}
+
+.user-info p {
+    margin-bottom: 10px;
+    color: var(--gray);
+}
+
+.logout-btn {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, var(--danger) 0%, #e85d04 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s;
+}
+
+.logout-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(255, 107, 107, 0.25);
+}
+
+/* Табы */
+.tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 30px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid var(--secondary);
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.tab-btn {
+    padding: 12px 24px;
+    background: transparent;
+    border: 1px solid var(--secondary);
+    color: var(--gray);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 500;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.tab-btn:hover {
+    background: rgba(255, 214, 10, 0.1);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.tab-btn.active {
+    background: var(--primary);
+    color: var(--dark);
+    border-color: var(--primary);
+}
+
+/* Секции */
+.section {
+    margin-bottom: 40px;
+    animation: fadeIn 0.5s ease;
+}
+
+.section h3 {
+    color: var(--primary);
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+    font-family: 'Roboto Slab', serif;
+    padding-bottom: 10px;
+    border-bottom: 2px solid rgba(255, 214, 10, 0.3);
+}
+
+/* Улучшенные карточки */
+.enhanced-card {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.1));
+    border-radius: 16px;
+    padding: 25px;
+    border: 1px solid var(--secondary);
+    transition: all 0.3s;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+.enhanced-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 214, 10, 0.1),
+        transparent
+    );
+    transition: left 0.7s ease;
+}
+
+.enhanced-card:hover::before {
+    left: 100%;
+}
+
+.enhanced-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+}
+
+/* Строки формы */
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+/* Бейджи ролей */
+.role-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    background: var(--secondary);
+    color: white;
+}
+
+.role-kam {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: var(--dark);
+}
+
+.role-zam {
+    background: linear-gradient(135deg, var(--accent) 0%, #7b2cbf 100%);
+}
+
+/* Индикатор режима просмотра */
+.view-mode-indicator {
+    background: linear-gradient(135deg, var(--accent) 0%, #7b2cbf 100%);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: 15px;
+}
+
+.back-to-admin {
+    margin-left: 15px;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, var(--accent) 0%, #7b2cbf 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s;
+}
+
+.back-to-admin:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(157, 78, 221, 0.25);
+}
+
+/* Навигация админа */
+.admin-nav {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 30px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid var(--secondary);
+    overflow-x: auto;
+}
+
+.admin-nav-btn {
+    padding: 12px 24px;
+    background: transparent;
+    border: 1px solid var(--secondary);
+    color: var(--gray);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 500;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.admin-nav-btn:hover {
+    background: rgba(255, 214, 10, 0.1);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.admin-nav-btn.active {
+    background: var(--primary);
+    color: var(--dark);
+    border-color: var(--primary);
+}
+
+/* Карточки команд */
+.teams-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 25px;
+    margin-top: 20px;
+}
+
+.team-card {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.1));
+    border-radius: 16px;
+    padding: 25px;
+    border: 1px solid var(--secondary);
+    transition: all 0.3s;
+}
+
+.team-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+}
+
+.team-card h3 {
+    color: var(--primary);
+    margin-bottom: 15px;
+    font-family: 'Roboto Slab', serif;
+}
+
+.team-card h4 {
+    color: var(--light);
+    margin: 20px 0 10px 0;
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.member-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.member-item:last-child {
+    border-bottom: none;
+}
+
+.notification-item.team {
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border-left: 3px solid var(--primary);
+}
+
+.absence-item {
+    padding: 10px;
+    background: rgba(255, 107, 107, 0.1);
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border-left: 3px solid var(--danger);
+}
+
+/* Чекбоксы */
+.checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin: 15px 0;
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.checkbox-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.checkbox-item input[type="checkbox"],
+.checkbox-item input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary);
+    cursor: pointer;
+}
+
+/* Уведомления */
+.notification-badge {
+    background: var(--danger);
+    color: white;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    margin-left: 8px;
+    font-weight: bold;
+}
+
+.notification-date {
+    color: var(--gray);
+    font-size: 0.9rem;
+    margin-top: 10px;
+    opacity: 0.8;
+}
+
+/* Анимации */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
-// Парсинг пароля
-function parsePassword(password) {
-    if (password === CONFIG.adminPassword) {
-        return { role: 'admin', teamId: null, isCommander: true };
-    }
-
-    const regex = /^(mal|str)([1-6])kab(\d{3})(?:_(kam|zam))?$/;
-    const match = password.match(regex);
-    
-    if (!match) return null;
-    
-    const [, type, teamId, kab, role] = match;
-    const teamNum = parseInt(teamId);
-    
-    // Проверяем соответствие типа и номера команды
-    const teamConfig = CONFIG.teams[teamNum];
-    if (!teamConfig || teamConfig.type !== type) return null;
-    
-    return {
-        role: role || 'soldier',
-        teamId: teamNum,
-        teamType: type,
-        isCommander: role === 'kam',
-        isDeputy: role === 'zam',
-        kabNumber: kab
-    };
+/* Подвал */
+footer {
+    text-align: center;
+    padding: 30px 0;
+    color: var(--gray);
+    margin-top: 50px;
+    border-top: 1px solid var(--secondary);
 }
 
-// Авторизация
-function login() {
-    const password = document.getElementById('passwordInput').value.trim();
-    const errorEl = document.getElementById('errorMessage');
-    
-    if (!password) {
-        errorEl.textContent = 'Введіть пароль';
-        return;
-    }
-    
-    const userData = parsePassword(password);
-    
-    if (!userData) {
-        errorEl.textContent = 'Невірний формат пароля. Приклад: mal1kab123_kam';
-        return;
-    }
-    
-    // Сохраняем данные пользователя в sessionStorage
-    sessionStorage.setItem('horting_user', JSON.stringify(userData));
-    sessionStorage.setItem('horting_login_time', Date.now());
-    
-    // Перенаправляем в зависимости от роли
-    if (userData.role === 'admin') {
-        window.location.href = 'dashboard.html';
-    } else {
-        window.location.href = 'team.html';
-    }
+/* Модальные окна (базовый стиль для скрипта) */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 20px;
+    animation: fadeIn 0.3s ease;
 }
 
-// Проверка авторизации
-function checkAuth(requiredRole = null) {
-    const userData = JSON.parse(sessionStorage.getItem('horting_user'));
-    const loginTime = parseInt(sessionStorage.getItem('horting_login_time')) || 0;
-    
-    // Сессия истекает через 8 часов
-    if (!userData || Date.now() - loginTime > 8 * 60 * 60 * 1000) {
-        sessionStorage.clear();
-        window.location.href = 'index.html';
-        return null;
-    }
-    
-    if (requiredRole && userData.role !== requiredRole) {
-        window.location.href = 'index.html';
-        return null;
-    }
-    
-    return userData;
+.modal {
+    background: linear-gradient(135deg, var(--darker) 0%, var(--dark) 100%);
+    border-radius: 20px;
+    padding: 30px;
+    max-width: 500px;
+    width: 100%;
+    border: 1px solid rgba(255, 214, 10, 0.3);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    animation: fadeIn 0.3s ease 0.1s both;
 }
 
-// Выход
-function logout() {
-    // Очищаем все данные сессии
-    sessionStorage.clear();
-    window.location.href = 'index.html';
+.modal h3 {
+    color: var(--primary);
+    margin-bottom: 20px;
+    text-align: center;
+    font-family: 'Roboto Slab', serif;
 }
 
-// Выход из режима просмотра админом
-function exitViewMode() {
-    sessionStorage.removeItem('horting_admin_view');
-    sessionStorage.removeItem('horting_view_team');
-    window.location.href = 'dashboard.html';
+.modal-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 25px;
 }
 
-// Форматирование даты
-function formatDate(date) {
-    return new Date(date).toLocaleDateString('uk-UA', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
+.modal-actions .enhanced-btn {
+    flex: 1;
 }
 
-// Функция обращения к админу
-function sendToAdmin(message, fromTeam = null) {
-    const notifications = JSON.parse(localStorage.getItem('horting_admin_notifications') || '[]');
-    
-    const notification = {
-        id: Date.now().toString(),
-        date: new Date().toISOString(),
-        message: message,
-        fromTeam: fromTeam,
-        read: false
-    };
-    
-    notifications.push(notification);
-    localStorage.setItem('horting_admin_notifications', JSON.stringify(notifications));
-    
-    return notification;
-}
-
-// Проверка дней занятий
-function isTrainingDay(date = new Date()) {
-    const dayNames = ['неділя', 'понеділок', 'вівторок', 'середа', 'четвер', 'п\'ятниця', 'субота'];
-    const currentDay = dayNames[date.getDay()];
-    return CONFIG.trainingDays.includes(currentDay);
-}
-
-// Получение ближайших занятий
-function getNextTrainings(count = 3) {
-    const result = [];
-    const today = new Date();
-    const dayNames = ['неділя', 'понеділок', 'вівторок', 'середа', 'четвер', 'п\'ятниця', 'субота'];
-    
-    for (let i = 0; i < 14; i++) { // Проверяем 2 недели вперед
-        const date = new Date(today);
-        date.setDate(today.getDate() + i);
-        const dayName = dayNames[date.getDay()];
-        
-        if (CONFIG.trainingDays.includes(dayName)) {
-            result.push({
-                date: date.toLocaleDateString('uk-UA'),
-                day: dayName,
-                isToday: i === 0
-            });
-            
-            if (result.length >= count) break;
-        }
+/* Адаптивность */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
     }
     
-    return result;
-}
-
-// Автоматическое удаление старых уведомлений
-function cleanOldData() {
-    const now = new Date();
-    
-    // Очистка уведомлений об отсутствии
-    const teams = TeamManager.getTeams();
-    Object.keys(teams).forEach(teamId => {
-        teams[teamId].absences = teams[teamId].absences.filter(absence => {
-            const absenceDate = new Date(absence.date + 'T23:59:59');
-            return absenceDate > now;
-        });
-    });
-    TeamManager.saveTeams(teams);
-    
-    // Очистка старых уведомлений админу (старше 30 дней)
-    const adminNotifications = JSON.parse(localStorage.getItem('horting_admin_notifications') || '[]');
-    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const filteredAdmin = adminNotifications.filter(notif => new Date(notif.date) > monthAgo);
-    localStorage.setItem('horting_admin_notifications', JSON.stringify(filteredAdmin));
-}
-
-// Управление данными команд
-class TeamManager {
-    static getTeams() {
-        return JSON.parse(localStorage.getItem('horting_teams') || '{}');
+    header h1 {
+        font-size: 2.5rem;
     }
     
-    static saveTeams(teams) {
-        localStorage.setItem('horting_teams', JSON.stringify(teams));
+    .login-card {
+        padding: 25px;
+        margin: 20px auto;
     }
     
-    static getTeam(teamId) {
-        const teams = this.getTeams();
-        return teams[teamId] || { members: [], notifications: [], tasks: [], absences: [] };
+    .input-group {
+        grid-template-columns: 1fr;
     }
     
-    static saveTeam(teamId, data) {
-        const teams = this.getTeams();
-        teams[teamId] = data;
-        this.saveTeams(teams);
+    .tabs {
+        flex-wrap: wrap;
     }
     
-    // Добавление члена команды
-    static addMember(teamId, member) {
-        const team = this.getTeam(teamId);
-        member.id = Date.now().toString(); // Простой ID
-        team.members.push(member);
-        this.saveTeam(teamId, team);
-        return member;
+    .tab-btn {
+        flex: 1;
+        min-width: 120px;
+        text-align: center;
     }
     
-    // Удаление члена команды
-    static removeMember(teamId, memberId) {
-        const team = this.getTeam(teamId);
-        team.members = team.members.filter(m => m.id !== memberId);
-        this.saveTeam(teamId, team);
+    .team-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 20px;
     }
     
-    // Добавление уведомления команды
-    static addTeamNotification(teamId, notification, author) {
-        const team = this.getTeam(teamId);
-        notification.id = Date.now().toString();
-        notification.date = new Date().toISOString();
-        notification.author = author;
-        team.notifications.push(notification);
-        this.saveTeam(teamId, team);
+    .user-info {
+        text-align: center;
     }
     
-    // Добавление общего уведомления
-    static addGlobalNotification(notification, author) {
-        const notifications = JSON.parse(localStorage.getItem('horting_global_notifications') || '[]');
-        notification.id = Date.now().toString();
-        notification.date = new Date().toISOString();
-        notification.author = author;
-        notifications.push(notification);
-        localStorage.setItem('horting_global_notifications', JSON.stringify(notifications));
+    .teams-grid {
+        grid-template-columns: 1fr;
     }
     
-    // Добавление уведомления админу
-    static addAdminNotification(notification) {
-        const notifications = JSON.parse(localStorage.getItem('horting_admin_notifications') || '[]');
-        notification.id = Date.now().toString();
-        notification.date = new Date().toISOString();
-        notifications.push(notification);
-        localStorage.setItem('horting_admin_notifications', JSON.stringify(notifications));
+    .form-row {
+        grid-template-columns: 1fr;
     }
     
-    // Добавление отсутствия
-    static addAbsence(teamId, absence) {
-        const team = this.getTeam(teamId);
-        absence.id = Date.now().toString();
-        absence.dateAdded = new Date().toISOString();
-        team.absences.push(absence);
-        this.saveTeam(teamId, team);
+    .admin-nav {
+        flex-wrap: wrap;
     }
     
-    // Очистка старых отсутствий
-    static cleanOldAbsences() {
-        const teams = this.getTeams();
-        const now = new Date();
-        
-        Object.keys(teams).forEach(teamId => {
-            teams[teamId].absences = teams[teamId].absences.filter(absence => {
-                const absenceDate = new Date(absence.date + 'T23:59:59');
-                return absenceDate > now;
-            });
-        });
-        
-        this.saveTeams(teams);
+    .admin-nav-btn {
+        flex: 1;
+        min-width: 140px;
+        text-align: center;
     }
     
-    // Добавление задачи
-    static addTask(teamId, task) {
-        const team = this.getTeam(teamId);
-        task.id = Date.now().toString();
-        task.date = new Date().toISOString();
-        task.completed = false;
-        team.tasks.push(task);
-        this.saveTeam(teamId, team);
-    }
-    
-    // Получение всех уведомлений для команды (включая общие)
-    static getAllNotificationsForTeam(teamId) {
-        const team = this.getTeam(teamId);
-        const global = JSON.parse(localStorage.getItem('horting_global_notifications') || '[]');
-        
-        // Фильтруем глобальные уведомления для этой команды
-        const teamGlobal = global.filter(notif => 
-            !notif.targetTeams || notif.targetTeams.includes(teamId.toString())
-        );
-        
-        return {
-            team: team.notifications,
-            global: teamGlobal
-        };
+    .password-examples ul {
+        grid-template-columns: 1fr;
     }
 }
 
-// Модальные окна
-class Modal {
-    static show(title, content, buttons = []) {
-        return new Promise((resolve) => {
-            const overlay = document.createElement('div');
-            overlay.className = 'modal-overlay';
-            overlay.id = 'modalOverlay';
-            
-            const modal = document.createElement('div');
-            modal.className = 'modal';
-            
-            let buttonsHtml = '';
-            if (buttons.length > 0) {
-                buttonsHtml = `
-                    <div class="modal-actions">
-                        ${buttons.map(btn => 
-                            `<button class="enhanced-btn ${btn.class || ''}" 
-                                    onclick="Modal.close('${btn.value || ''}')">
-                                ${btn.text}
-                            </button>`
-                        ).join('')}
-                    </div>
-                `;
-            }
-            
-            modal.innerHTML = `
-                <h3>${title}</h3>
-                ${content}
-                ${buttonsHtml}
-            `;
-            
-            overlay.appendChild(modal);
-            document.body.appendChild(overlay);
-            
-            // Сохраняем callback для resolve
-            overlay.resolveCallback = resolve;
-        });
+@media (max-width: 480px) {
+    header h1 {
+        font-size: 2rem;
     }
     
-    static close(value = null) {
-        const overlay = document.getElementById('modalOverlay');
-        if (overlay && overlay.resolveCallback) {
-            overlay.resolveCallback(value);
-        }
-        if (overlay) {
-            overlay.remove();
-        }
+    .login-card h2 {
+        font-size: 1.5rem;
     }
     
-    static showForm(title, fields) {
-        return new Promise((resolve) => {
-            const formId = 'modalForm_' + Date.now();
-            let formHtml = `<form id="${formId}">`;
-            
-            fields.forEach(field => {
-                formHtml += `
-                    <div style="margin-bottom: 20px;">
-                        <label style="display: block; margin-bottom: 8px; color: #e0e1dd;">
-                            ${field.label}
-                        </label>
-                `;
-                
-                if (field.type === 'textarea') {
-                    formHtml += `
-                        <textarea class="enhanced-textarea" 
-                                  name="${field.name}" 
-                                  placeholder="${field.placeholder || ''}"
-                                  ${field.required ? 'required' : ''}
-                                  rows="${field.rows || 4}">${field.value || ''}</textarea>
-                    `;
-                } else if (field.type === 'select') {
-                    formHtml += `
-                        <select class="enhanced-select" 
-                                name="${field.name}" 
-                                ${field.required ? 'required' : ''}>
-                            <option value="">${field.placeholder || 'Оберіть опцію...'}</option>
-                            ${field.options.map(opt => 
-                                `<option value="${opt.value}" ${field.value === opt.value ? 'selected' : ''}>
-                                    ${opt.text}
-                                </option>`
-                            ).join('')}
-                        </select>
-                    `;
-                } else if (field.type === 'checkbox-group') {
-                    formHtml += `<div class="checkbox-group">`;
-                    field.options.forEach(opt => {
-                        formHtml += `
-                            <label class="checkbox-item">
-                                <input type="checkbox" 
-                                       name="${field.name}" 
-                                       value="${opt.value}"
-                                       ${opt.checked ? 'checked' : ''}>
-                                ${opt.text}
-                            </label>
-                        `;
-                    });
-                    formHtml += `</div>`;
-                } else {
-                    formHtml += `
-                        <input class="enhanced-input" 
-                               type="${field.type || 'text'}" 
-                               name="${field.name}" 
-                               value="${field.value || ''}"
-                               placeholder="${field.placeholder || ''}"
-                               ${field.required ? 'required' : ''}>
-                    `;
-                }
-                
-                formHtml += `</div>`;
-            });
-            
-            formHtml += `</form>`;
-            
-            const buttons = [
-                { text: 'Скасувати', class: 'secondary', value: null },
-                { text: 'Зберегти', class: '', value: 'submit' }
-            ];
-            
-            Modal.show(title, formHtml, buttons).then(result => {
-                if (result === 'submit') {
-                    const form = document.getElementById(formId);
-                    if (form.checkValidity()) {
-                        const formData = new FormData(form);
-                        const data = {};
-                        formData.forEach((value, key) => {
-                            if (key.includes('[]')) {
-                                const cleanKey = key.replace('[]', '');
-                                if (!data[cleanKey]) data[cleanKey] = [];
-                                data[cleanKey].push(value);
-                            } else {
-                                data[key] = value;
-                            }
-                        });
-                        resolve(data);
-                    } else {
-                        form.reportValidity();
-                        resolve(null);
-                    }
-                } else {
-                    resolve(null);
-                }
-            });
-        });
+    .enhanced-btn {
+        padding: 14px 20px;
+    }
+    
+    .tab-btn {
+        padding: 10px 16px;
+        font-size: 0.9rem;
     }
 }
-
-// Инициализация при загрузке
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initStorage);
-} else {
-    initStorage();
-}
-
-// Очистка старых данных при запуске
-cleanOldData();
