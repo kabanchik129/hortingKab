@@ -11,6 +11,22 @@
     --darker: #0a141f;
     --light: #e0e1dd;
     --gray: #adb5bd;
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+/* Телефонный режим */
+.phone-mode {
+    --card-padding: 20px;
+    --font-size-base: 14px;
+    --input-padding: 12px 15px;
+}
+
+/* PC режим */
+.pc-mode {
+    --card-padding: 30px;
+    --font-size-base: 16px;
+    --input-padding: 16px 20px;
 }
 
 /* Сброс и базовые стили */
@@ -18,7 +34,7 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 body {
@@ -27,8 +43,37 @@ body {
     color: var(--light);
     min-height: 100vh;
     line-height: 1.6;
+    font-size: var(--font-size-base);
+    overflow-x: hidden;
 }
 
+/* Фоновые элементы */
+.bg-pattern {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+        radial-gradient(circle at 20% 30%, rgba(255, 214, 10, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(157, 78, 221, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 40% 80%, rgba(0, 187, 249, 0.05) 0%, transparent 50%);
+    z-index: -2;
+}
+
+.bg-glow {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80vw;
+    height: 80vh;
+    background: radial-gradient(circle, rgba(255, 214, 10, 0.1) 0%, transparent 70%);
+    filter: blur(60px);
+    z-index: -1;
+}
+
+/* Стили для страницы входа */
 .login-page {
     display: flex;
     flex-direction: column;
@@ -36,21 +81,67 @@ body {
     justify-content: center;
     min-height: 100vh;
     padding: 20px;
+    position: relative;
 }
 
-/* Контейнер */
 .container {
     width: 100%;
-    max-width: 500px;
+    max-width: 1200px;
+    position: relative;
+    z-index: 1;
 }
 
-/* Шапка страницы */
-header {
+/* Выбор устройства */
+.device-choice {
+    display: none;
+    animation: fadeIn 0.5s ease;
+}
+
+.device-choice.active {
+    display: block;
+}
+
+.device-choice.fade-out {
+    animation: fadeOut 0.5s ease forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-20px); }
+}
+
+.device-card {
+    background: var(--glass-bg);
+    border-radius: 24px;
+    padding: 40px;
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(10px);
+    box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
     text-align: center;
-    margin-bottom: 40px;
+    max-width: 800px;
+    margin: 0 auto;
 }
 
-header h1 {
+.logo-animation {
+    font-size: 60px;
+    color: var(--primary);
+    margin-bottom: 20px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.device-card h1 {
     font-family: 'Roboto Slab', serif;
     font-size: 48px;
     background: linear-gradient(45deg, var(--primary), var(--accent));
@@ -61,28 +152,224 @@ header h1 {
     text-shadow: 0 2px 10px rgba(255, 214, 10, 0.3);
 }
 
-.subtitle {
-    font-size: 18px;
+.choice-title {
+    font-size: 24px;
+    color: var(--light);
+    margin: 30px 0;
+    font-weight: 500;
+}
+
+.device-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+    margin: 40px 0;
+}
+
+.device-option {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
+    padding: 30px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.device-option::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.device-option:hover::before {
+    transform: scaleX(1);
+}
+
+.device-option:hover {
+    border-color: var(--primary);
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.device-icon {
+    font-size: 48px;
+    margin-bottom: 20px;
+    color: var(--primary);
+}
+
+.phone-option .device-icon {
+    color: var(--info);
+}
+
+.pc-option .device-icon {
+    color: var(--accent);
+}
+
+.device-option h3 {
+    font-size: 24px;
+    margin-bottom: 10px;
+    color: var(--light);
+}
+
+.device-option p {
     color: var(--gray);
-    letter-spacing: 2px;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.device-features {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+    text-align: left;
+}
+
+.device-features span {
+    color: var(--light);
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.device-features i {
+    color: var(--success);
+}
+
+.device-hint {
+    margin-top: 30px;
+    padding: 15px;
+    background: rgba(255, 214, 10, 0.1);
+    border-radius: 12px;
+    border-left: 4px solid var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--light);
+}
+
+.device-hint i {
+    color: var(--primary);
+    font-size: 20px;
+}
+
+/* Секция входа */
+.login-section {
+    display: none;
+    animation: fadeIn 0.5s ease;
+}
+
+.login-section.active {
+    display: block;
+}
+
+/* Шапка страницы */
+header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.logo-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+
+.logo-header i {
+    font-size: 36px;
+    color: var(--primary);
+}
+
+header h1 {
+    font-family: 'Roboto Slab', serif;
+    font-size: 42px;
+    background: linear-gradient(45deg, var(--primary), var(--accent));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin: 0;
+}
+
+.subtitle {
+    font-size: 16px;
+    color: var(--gray);
+    letter-spacing: 1px;
     text-transform: uppercase;
+    margin-bottom: 20px;
+}
+
+.device-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    background: rgba(255, 214, 10, 0.1);
+    border-radius: 50px;
+    border: 1px solid rgba(255, 214, 10, 0.3);
+    margin-top: 15px;
+}
+
+.device-indicator i {
+    color: var(--primary);
+    font-size: 18px;
+}
+
+.device-indicator span {
+    color: var(--light);
+    font-weight: 500;
+}
+
+.change-device-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--secondary);
+    color: var(--light);
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.change-device-btn:hover {
+    background: var(--primary);
+    color: var(--dark);
+    border-color: var(--primary);
 }
 
 /* Карточка входа */
 .login-card {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 20px;
-    padding: 40px;
-    border: 1px solid var(--secondary);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    background: var(--glass-bg);
+    border-radius: 24px;
+    padding: var(--card-padding);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(10px);
+    box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
     margin-bottom: 30px;
 }
 
 .login-card h2 {
     color: var(--primary);
-    margin-bottom: 20px;
-    font-size: 24px;
+    margin-bottom: 25px;
+    font-size: 28px;
     text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
 }
 
 .hint {
@@ -93,25 +380,43 @@ header h1 {
     text-align: center;
     padding: 15px;
     background: rgba(255, 255, 255, 0.03);
-    border-radius: 10px;
+    border-radius: 12px;
     border-left: 4px solid var(--secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
 }
 
 /* Поля ввода */
 .input-group {
+    margin-bottom: 25px;
+}
+
+.input-with-icon {
+    position: relative;
     margin-bottom: 20px;
+}
+
+.input-with-icon i {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--gray);
+    font-size: 18px;
 }
 
 .enhanced-input {
     width: 100%;
-    padding: 16px 20px;
+    padding: var(--input-padding);
+    padding-left: 50px;
     border: 2px solid var(--secondary);
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.08);
     color: var(--light);
     font-size: 16px;
     font-family: 'Roboto', sans-serif;
-    margin-bottom: 15px;
 }
 
 .enhanced-input:focus {
@@ -119,6 +424,23 @@ header h1 {
     border-color: var(--primary);
     background: rgba(255, 255, 255, 0.12);
     box-shadow: 0 0 0 4px rgba(255, 214, 10, 0.15);
+}
+
+.show-password {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--gray);
+    cursor: pointer;
+    font-size: 18px;
+    padding: 5px;
+}
+
+.show-password:hover {
+    color: var(--primary);
 }
 
 /* Кнопки */
@@ -134,6 +456,10 @@ header h1 {
     cursor: pointer;
     font-family: 'Roboto', sans-serif;
     transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
 }
 
 .enhanced-btn:hover {
@@ -141,75 +467,254 @@ header h1 {
     box-shadow: 0 12px 25px rgba(255, 214, 10, 0.25);
 }
 
+.login-btn {
+    font-size: 18px;
+    padding: 18px;
+}
+
 /* Примеры паролей */
 .password-examples {
     margin-top: 30px;
-    padding: 20px;
+    padding: 25px;
     background: rgba(255, 255, 255, 0.03);
-    border-radius: 12px;
+    border-radius: 16px;
     border-left: 4px solid var(--primary);
 }
 
-.password-examples p {
-    margin-bottom: 15px;
+.password-examples h3 {
+    margin-bottom: 20px;
     color: var(--primary);
-    font-weight: bold;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
-.password-examples ul {
-    list-style: none;
+.password-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
 }
 
-.password-examples li {
-    padding: 8px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+.password-item {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.password-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-2px);
+    border-color: var(--primary);
+}
+
+.password-item.admin {
+    background: rgba(255, 214, 10, 0.1);
+    border-color: var(--primary);
+}
+
+.password-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    color: var(--light);
+    font-weight: 500;
+}
+
+.password-header i {
+    color: var(--primary);
+}
+
+.password-item.admin .password-header i {
+    color: #ffd700;
+}
+
+.password-item code {
+    background: rgba(255, 214, 10, 0.1);
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: var(--primary);
+    font-family: monospace;
+    font-size: 14px;
+    display: block;
+    text-align: center;
+    word-break: break-all;
+}
+
+/* Быстрый вход */
+.quick-login {
+    margin-top: 30px;
+    padding: 20px;
+    background: rgba(157, 78, 221, 0.1);
+    border-radius: 16px;
+    border-left: 4px solid var(--accent);
+}
+
+.quick-login h4 {
+    margin-bottom: 15px;
+    color: var(--accent);
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.quick-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.quick-btn {
+    flex: 1;
+    min-width: 120px;
+    padding: 10px 15px;
+    background: rgba(157, 78, 221, 0.2);
+    border: 1px solid var(--accent);
+    color: var(--light);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
     font-size: 14px;
 }
 
-.password-examples li:last-child {
-    border-bottom: none;
-}
-
-.password-examples code {
-    background: rgba(255, 214, 10, 0.1);
-    padding: 2px 6px;
-    border-radius: 4px;
-    color: var(--primary);
-    font-family: monospace;
-    font-size: 13px;
+.quick-btn:hover {
+    background: var(--accent);
+    color: white;
+    transform: translateY(-2px);
 }
 
 /* Сообщение об ошибке */
 .error-message {
     color: var(--danger);
     text-align: center;
-    padding: 10px;
+    padding: 15px;
     background: rgba(255, 107, 107, 0.1);
-    border-radius: 8px;
+    border-radius: 12px;
     border: 1px solid var(--danger);
-    margin: 15px 0;
+    margin: 20px 0;
     display: none;
+    animation: shake 0.5s ease;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
 }
 
 /* Подвал */
 footer {
     text-align: center;
-    padding: 20px;
+    padding: 25px;
     color: var(--gray);
     font-size: 14px;
     margin-top: 30px;
     border-top: 1px solid var(--secondary);
     width: 100%;
     max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
-/* Стили для остальных страниц */
+footer i {
+    margin-right: 5px;
+}
+
+.version {
+    font-size: 12px;
+    margin-top: 5px;
+    color: var(--secondary);
+}
+
+/* Glassmorphism эффект */
+.glassmorphism {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(10px);
+}
+
+/* Адаптивность для телефона */
+@media (max-width: 768px) {
+    .phone-mode {
+        --card-padding: 20px;
+        --font-size-base: 14px;
+        --input-padding: 12px 15px;
+    }
+    
+    .device-card {
+        padding: 25px;
+        margin: 0 10px;
+    }
+    
+    .device-card h1 {
+        font-size: 36px;
+    }
+    
+    .device-options {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .device-option {
+        padding: 20px;
+    }
+    
+    header h1 {
+        font-size: 32px;
+    }
+    
+    .logo-header {
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .logo-header i {
+        font-size: 28px;
+    }
+    
+    .password-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .quick-buttons {
+        flex-direction: column;
+    }
+    
+    .quick-btn {
+        min-width: auto;
+    }
+    
+    .device-indicator {
+        flex-direction: column;
+        gap: 5px;
+        padding: 10px;
+    }
+}
+
+/* Адаптивность для PC */
+@media (min-width: 769px) {
+    .pc-mode {
+        --card-padding: 30px;
+        --font-size-base: 16px;
+        --input-padding: 16px 20px;
+    }
+    
+    .device-options {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Общие стили для остальных страниц */
 .team-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px;
-    background: rgba(255, 255, 255, 0.03);
+    padding: var(--card-padding);
+    background: var(--glass-bg);
     border-radius: 16px;
     margin-bottom: 30px;
     border: 1px solid var(--secondary);
@@ -221,37 +726,12 @@ footer {
     font-family: 'Roboto Slab', serif;
 }
 
-.user-info {
-    text-align: right;
-}
-
-.user-info p {
-    margin-bottom: 10px;
-    color: var(--gray);
-}
-
-.logout-btn {
-    padding: 10px 20px;
-    background: linear-gradient(135deg, var(--danger) 0%, #e85d04 100%);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: all 0.3s;
-}
-
-.logout-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(255, 107, 107, 0.25);
-}
-
 /* Табы */
 .tabs {
     display: flex;
     gap: 10px;
     margin-bottom: 30px;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--glass-bg);
     padding: 15px;
     border-radius: 12px;
     border: 1px solid var(--secondary);
@@ -282,23 +762,9 @@ footer {
     border-color: var(--primary);
 }
 
-/* Секции */
-.section {
-    margin-bottom: 40px;
-}
-
-.section h3 {
-    color: var(--primary);
-    margin-bottom: 20px;
-    font-size: 20px;
-    font-family: 'Roboto Slab', serif;
-    padding-bottom: 10px;
-    border-bottom: 2px solid rgba(255, 214, 10, 0.3);
-}
-
 /* Карточки */
 .enhanced-card {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--glass-bg);
     border-radius: 16px;
     padding: 20px;
     border: 1px solid var(--secondary);
@@ -317,7 +783,7 @@ footer {
     display: flex;
     gap: 10px;
     margin-bottom: 30px;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--glass-bg);
     padding: 15px;
     border-radius: 12px;
     border: 1px solid var(--secondary);
@@ -357,7 +823,7 @@ footer {
 }
 
 .team-card {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--glass-bg);
     border-radius: 16px;
     padding: 20px;
     border: 1px solid var(--secondary);
@@ -381,50 +847,38 @@ footer {
     border-bottom: none;
 }
 
-/* Адаптивность */
-@media (max-width: 768px) {
-    .container {
-        padding: 15px;
-    }
-    
-    header h1 {
-        font-size: 36px;
-    }
-    
-    .login-card {
-        padding: 25px;
-    }
-    
-    .team-header {
-        flex-direction: column;
-        text-align: center;
-        gap: 15px;
-    }
-    
-    .user-info {
-        text-align: center;
-    }
-    
-    .tabs {
-        flex-wrap: wrap;
-    }
-    
-    .teams-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .admin-nav {
-        flex-wrap: wrap;
-    }
+/* Эффекты для телефона и PC */
+.phone-mode .enhanced-card {
+    padding: 15px;
 }
 
+.phone-mode .tabs {
+    flex-wrap: wrap;
+}
+
+.phone-mode .tab-btn {
+    flex: 1;
+    min-width: calc(50% - 5px);
+    text-align: center;
+}
+
+.pc-mode .tabs {
+    flex-wrap: nowrap;
+}
+
+/* Очень маленькие экраны */
 @media (max-width: 480px) {
+    .phone-mode {
+        --card-padding: 15px;
+        --font-size-base: 13px;
+    }
+    
     header h1 {
-        font-size: 28px;
+        font-size: 24px;
     }
     
     .subtitle {
-        font-size: 14px;
+        font-size: 12px;
     }
     
     .login-card h2 {
@@ -433,6 +887,12 @@ footer {
     
     .tab-btn, .admin-nav-btn {
         padding: 10px 15px;
-        font-size: 14px;
+        font-size: 13px;
+    }
+    
+    .team-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
     }
 }

@@ -684,6 +684,50 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
+// Функции для работы с устройством
+function getDeviceMode() {
+    return localStorage.getItem('horting_device') || 'pc';
+}
+
+function applyDeviceStyles() {
+    const device = getDeviceMode();
+    document.body.classList.remove('phone-mode', 'pc-mode');
+    document.body.classList.add(device + '-mode');
+    
+    // Обновляем мета-тег viewport для мобильных устройств
+    if (device === 'phone') {
+        document.querySelector('meta[name="viewport"]').setAttribute('content', 
+            'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+    } else {
+        document.querySelector('meta[name="viewport"]').setAttribute('content', 
+            'width=device-width, initial-scale=1.0');
+    }
+}
+
+// Инициализация устройства при загрузке других страниц
+function initDevice() {
+    if (!window.location.pathname.includes('index.html')) {
+        applyDeviceStyles();
+    }
+}
+
+// Экспортируем новые функции
+window.getDeviceMode = getDeviceMode;
+window.applyDeviceStyles = applyDeviceStyles;
+window.initDevice = initDevice;
+
+// Обновляем инициализацию при загрузке
+document.addEventListener('DOMContentLoaded', function() {
+    // Инициализируем хранилище команд
+    TeamManager.init();
+    
+    // Применяем стили устройства на других страницах
+    if (!window.location.pathname.includes('index.html')) {
+        initDevice();
+    }
+    
+    // Остальной существующий код...
+});
 
 // Экспортируем глобальные функции для использования в других скриптах
 window.TeamManager = TeamManager;

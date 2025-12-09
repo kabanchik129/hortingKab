@@ -7,56 +7,277 @@
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="login-page">
+    <!-- Фоновые элементы -->
+    <div class="bg-pattern"></div>
+    <div class="bg-glow"></div>
+    
     <div class="container">
-        <header>
-            <h1>ХОРТИНГ</h1>
-            <p class="subtitle">Військово-патріотичний гурток</p>
-        </header>
-
-        <main>
-            <div class="login-card">
-                <h2>Доступ до системи</h2>
-                <p class="hint">Введіть ваш пароль. Формат: mal1kab123_kam, str4kab456_zam, kyka7 (адмін)</p>
-                <div class="input-group">
-                    <input type="password" class="enhanced-input" id="passwordInput" placeholder="Ваш пароль" autocomplete="off">
-                    <button class="enhanced-btn" id="loginBtn" style="padding: 15px 30px;">Увійти</button>
+        <!-- Выбор устройства -->
+        <div class="device-choice active" id="deviceChoice">
+            <div class="device-card glassmorphism">
+                <div class="logo-animation">
+                    <i class="fas fa-shield-alt"></i>
                 </div>
-                <p id="errorMessage" class="error-message"></p>
-                <div class="password-examples">
-                    <p><strong>Приклади паролів (6 команд):</strong></p>
-                    <ul>
-                        <li>Адмін: <code>kyka7</code></li>
-                        <li>Ком. 1-ї (молодші): <code>mal1kab123_kam</code></li>
-                        <li>Боець 2-ї: <code>mal2kab777</code></li>
-                        <li>Ком. розвідки (3-я): <code>mal3kab001_kam</code></li>
-                        <li>Ком. 4-ї (старші): <code>str4kab888_kam</code></li>
-                        <li>Зам. 6-ї: <code>str6kab999_zam</code></li>
-                        <li>Боець 5-ї: <code>str5kab555</code></li>
-                    </ul>
+                <h1>ХОРТИНГ</h1>
+                <p class="subtitle">Військово-патріотичний гурток</p>
+                <p class="choice-title">Оберіть пристрій:</p>
+                
+                <div class="device-options">
+                    <div class="device-option phone-option" onclick="selectDevice('phone')">
+                        <div class="device-icon">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <h3>Телефон</h3>
+                        <p>Оптимізовано для мобільних пристроїв</p>
+                        <div class="device-features">
+                            <span><i class="fas fa-check-circle"></i> Зручне керування</span>
+                            <span><i class="fas fa-check-circle"></i> Адаптивний дизайн</span>
+                        </div>
+                    </div>
+                    
+                    <div class="device-option pc-option" onclick="selectDevice('pc')">
+                        <div class="device-icon">
+                            <i class="fas fa-desktop"></i>
+                        </div>
+                        <h3>Комп'ютер</h3>
+                        <p>Повноцінна версія для ПК</p>
+                        <div class="device-features">
+                            <span><i class="fas fa-check-circle"></i> Розширений функціонал</span>
+                            <span><i class="fas fa-check-circle"></i> Великий екран</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="device-hint">
+                    <i class="fas fa-info-circle"></i>
+                    <p>Ви можете змінити пристрій пізніше в налаштуваннях</p>
                 </div>
             </div>
-        </main>
+        </div>
 
-        <footer>
-            <p>© Хортинг. Тільки для авторизованих членів гуртка.</p>
-        </footer>
+        <!-- Форма входа (скрыта по умолчанию) -->
+        <div class="login-section" id="loginSection">
+            <header>
+                <div class="logo-header">
+                    <i class="fas fa-shield-alt"></i>
+                    <h1>ХОРТИНГ</h1>
+                </div>
+                <p class="subtitle">Військово-патріотичний гурток</p>
+                <div class="device-indicator" id="deviceIndicator">
+                    <i class="fas fa-mobile-alt"></i>
+                    <span>Мобільна версія</span>
+                    <button class="change-device-btn" onclick="changeDevice()">Змінити</button>
+                </div>
+            </header>
+
+            <main>
+                <div class="login-card glassmorphism">
+                    <h2><i class="fas fa-lock"></i> Доступ до системи</h2>
+                    <p class="hint">
+                        <i class="fas fa-key"></i>
+                        Введіть ваш пароль. Формат: mal1kab123_kam, str4kab456_zam, kyka7 (адмін)
+                    </p>
+                    
+                    <div class="input-group">
+                        <div class="input-with-icon">
+                            <i class="fas fa-key"></i>
+                            <input type="password" class="enhanced-input" id="passwordInput" placeholder="Ваш пароль" autocomplete="off">
+                            <button class="show-password" id="showPasswordBtn">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <button class="enhanced-btn login-btn" id="loginBtn">
+                            <i class="fas fa-sign-in-alt"></i>
+                            Увійти
+                        </button>
+                    </div>
+                    
+                    <p id="errorMessage" class="error-message"></p>
+                    
+                    <div class="password-examples glassmorphism">
+                        <h3><i class="fas fa-list"></i> Приклади паролів (6 команд):</h3>
+                        <div class="password-grid">
+                            <div class="password-item admin">
+                                <div class="password-header">
+                                    <i class="fas fa-crown"></i>
+                                    <span>Адмін</span>
+                                </div>
+                                <code>kyka7</code>
+                            </div>
+                            
+                            <div class="password-item">
+                                <div class="password-header">
+                                    <i class="fas fa-star"></i>
+                                    <span>Ком. 1-ї (молодші)</span>
+                                </div>
+                                <code>mal1kab123_kam</code>
+                            </div>
+                            
+                            <div class="password-item">
+                                <div class="password-header">
+                                    <i class="fas fa-user"></i>
+                                    <span>Боець 2-ї</span>
+                                </div>
+                                <code>mal2kab777</code>
+                            </div>
+                            
+                            <div class="password-item">
+                                <div class="password-header">
+                                    <i class="fas fa-binoculars"></i>
+                                    <span>Ком. розвідки (3-я)</span>
+                                </div>
+                                <code>mal3kab001_kam</code>
+                            </div>
+                            
+                            <div class="password-item">
+                                <div class="password-header">
+                                    <i class="fas fa-medal"></i>
+                                    <span>Ком. 4-ї (старші)</span>
+                                </div>
+                                <code>str4kab888_kam</code>
+                            </div>
+                            
+                            <div class="password-item">
+                                <div class="password-header">
+                                    <i class="fas fa-user-friends"></i>
+                                    <span>Зам. 6-ї</span>
+                                </div>
+                                <code>str6kab999_zam</code>
+                            </div>
+                            
+                            <div class="password-item">
+                                <div class="password-header">
+                                    <i class="fas fa-shield-alt"></i>
+                                    <span>Боець 5-ї</span>
+                                </div>
+                                <code>str5kab555</code>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Быстрые пароли для разработки -->
+                    <div class="quick-login" id="quickLogin">
+                        <h4><i class="fas fa-bolt"></i> Швидкий вхід (для тесту):</h4>
+                        <div class="quick-buttons">
+                            <button class="quick-btn" onclick="quickLogin('kyka7')">Адмін</button>
+                            <button class="quick-btn" onclick="quickLogin('mal1kab123_kam')">Ком. 1</button>
+                            <button class="quick-btn" onclick="quickLogin('str4kab456_zam')">Зам. 4</button>
+                            <button class="quick-btn" onclick="quickLogin('mal2kab777')">Боець 2</button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <footer>
+                <p><i class="far fa-copyright"></i> Хортинг. Тільки для авторизованих членів гуртка.</p>
+                <p class="version">v2.0 • Адаптивна версія</p>
+            </footer>
+        </div>
     </div>
 
     <script src="script.js"></script>
     <script>
-        // Привязка событий для страницы входа
-        if (document.getElementById('loginBtn')) {
-            document.getElementById('loginBtn').addEventListener('click', login);
-            document.getElementById('passwordInput').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') login();
-            });
-            
-            // Фокус на поле ввода при загрузке
-            document.getElementById('passwordInput').focus();
+        // Определение устройства по умолчанию
+        function detectDevice() {
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            return isMobile ? 'phone' : 'pc';
         }
+        
+        let selectedDevice = localStorage.getItem('horting_device') || detectDevice();
+        
+        // Показать/скрыть выбор устройства
+        function showDeviceChoice() {
+            document.getElementById('deviceChoice').classList.add('active');
+            document.getElementById('loginSection').classList.remove('active');
+        }
+        
+        function hideDeviceChoice() {
+            document.getElementById('deviceChoice').classList.remove('active');
+            document.getElementById('loginSection').classList.add('active');
+            updateDeviceIndicator();
+        }
+        
+        // Выбор устройства
+        function selectDevice(device) {
+            selectedDevice = device;
+            localStorage.setItem('horting_device', device);
+            
+            // Добавляем класс к body для стилизации
+            document.body.classList.remove('phone-mode', 'pc-mode');
+            document.body.classList.add(device + '-mode');
+            
+            // Показываем анимацию
+            const deviceChoice = document.getElementById('deviceChoice');
+            deviceChoice.classList.add('fade-out');
+            
+            setTimeout(() => {
+                hideDeviceChoice();
+                deviceChoice.classList.remove('fade-out');
+            }, 500);
+        }
+        
+        // Обновить индикатор устройства
+        function updateDeviceIndicator() {
+            const indicator = document.getElementById('deviceIndicator');
+            const icon = indicator.querySelector('i');
+            const text = indicator.querySelector('span');
+            
+            if (selectedDevice === 'phone') {
+                icon.className = 'fas fa-mobile-alt';
+                text.textContent = 'Мобільна версія';
+            } else {
+                icon.className = 'fas fa-desktop';
+                text.textContent = 'Комп\'ютерна версія';
+            }
+        }
+        
+        // Изменить устройство
+        function changeDevice() {
+            showDeviceChoice();
+        }
+        
+        // Быстрый вход (для тестирования)
+        function quickLogin(password) {
+            document.getElementById('passwordInput').value = password;
+            login();
+        }
+        
+        // Показать/скрыть пароль
+        document.addEventListener('DOMContentLoaded', function() {
+            const showPasswordBtn = document.getElementById('showPasswordBtn');
+            const passwordInput = document.getElementById('passwordInput');
+            
+            if (showPasswordBtn && passwordInput) {
+                showPasswordBtn.addEventListener('click', function() {
+                    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                    passwordInput.setAttribute('type', type);
+                    this.querySelector('i').className = type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
+                });
+            }
+            
+            // Если устройство уже выбрано, показываем форму входа
+            if (localStorage.getItem('horting_device')) {
+                selectDevice(localStorage.getItem('horting_device'));
+            } else {
+                // Показываем выбор устройства
+                showDeviceChoice();
+            }
+            
+            // Быстрый вход показываем только на localhost
+            const quickLoginDiv = document.getElementById('quickLogin');
+            if (quickLoginDiv && !window.location.href.includes('localhost') && !window.location.href.includes('127.0.0.1')) {
+                quickLoginDiv.style.display = 'none';
+            }
+        });
+        
+        // Экспортируем функции для глобального использования
+        window.selectDevice = selectDevice;
+        window.changeDevice = changeDevice;
+        window.quickLogin = quickLogin;
     </script>
 </body>
 </html>
